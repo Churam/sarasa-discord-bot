@@ -36,6 +36,7 @@ Commented until each modules are rewritten for discordpy rewrite
 #Extensions to load when starting the bot
 #startup_extensions = ["gacha", "reddit", "danbooru", "misc", "hanapara", "goal", "wiki"] 
 
+startup_extensions = []
 
 #Load the Discord API Key
 with open('api.json') as api_file:    
