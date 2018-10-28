@@ -112,7 +112,7 @@ async def restart(ctx):
 
 @client.command(aliases=["cg"])
 async def changegame(ctx,*, text):
-    if ctx.author.uid not in ownerid :
+    if ctx.author.id not in ownerid :
         pass
     else :
         await client.change_presence(game=discord.Game(name=text))
