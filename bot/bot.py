@@ -22,6 +22,7 @@ from io import BytesIO
 from pathlib import Path
 from math import ceil
 
+#enable the logger
 logger = logging.getLogger('discord')
 logger.setLevel(logging.DEBUG)
 handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
@@ -29,8 +30,11 @@ handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(me
 logger.addHandler(handler)
 
 
+'''
+Commented until each modules are rewritten for discordpy rewrite
+'''
 #Extensions to load when starting the bot
-startup_extensions = ["gacha", "reddit", "danbooru", "misc", "hanapara", "goal", "wiki"]
+#startup_extensions = ["gacha", "reddit", "danbooru", "misc", "hanapara", "goal", "wiki"] 
 
 
 #Load the Discord API Key
@@ -38,20 +42,15 @@ with open('api.json') as api_file:
     api_key = json.load(api_file)
 discord_api = api_key["API"][0]["discord"]
 
-
+'''
+MOVE THAT TO A CONFIG FILE
+'''
+ownerid = 90878360053366784
 
 description = "Sarasa bot for Hanapara, please give me plenty of cake !"
-client = commands.Bot(command_prefix='$', description=description )
-bot_dir = "."
-os.chdir(bot_dir)
-ownerid = '90878360053366784'
-gw_server_id = "246519048559394817"
+client = commands.Bot(command_prefix='$', description=description)
 
 client.pm_help = True #Send the help message in PM
-hanapara_server = 0 
-general_channel = 0
-gw_st = 0
-scam_on = 0
 
     
 def adduser(userid, username):
@@ -83,10 +82,7 @@ async def on_ready():
     print(client.user.name)
     print(client.user.id)
     print('------')
-    global hanapara_server
-    global general_channel
-    general_channel = client.get_channel(id='246519048559394817')
-    hanapara_server = client.get_server(id='246519048559394817')
+
 
 
 @client.event
@@ -94,16 +90,16 @@ async def on_message(message):
     adduser(message.author.id, message.author.name) #Add the user if he's not registered
     #if "loli" in message.content.lower() :
     #			await client.add_reaction(message, "\U0001F693")
-    await client.process_commands(message)
+    await client.process_commands(message) #Keep on_message from blocking the function calls
 
 @client.command(description="Check if the bot is active")
 async def active():
     print("Command received")
     await client.say("Yes ? Do you need me ?")
 
-@client.command(description="Restarts the bot", pass_context=True)
+@client.command(description="Restarts the bot")
 async def restart(ctx):
-    if ctx.message.author.id == ownerid:
+    if ctx.author.id == ownerid:
         print("Restarting the bot")
         msg="Restarting the bot"
         await client.say(msg)
@@ -113,10 +109,9 @@ async def restart(ctx):
         msg="What are you trying to do ?! Idiot !"
         await client.say(msg)
 
-@client.command(pass_context=True,aliases=["cg"])
+@client.command(aliases=["cg"])
 async def changegame(ctx,*, text):
-    uid = ctx.message.author.id
-    if uid not in ownerid :
+    if ctx.author.uid not in ownerid :
         pass
     else :
         await client.change_presence(game=discord.Game(name=text))
