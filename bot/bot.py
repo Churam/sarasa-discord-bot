@@ -49,7 +49,7 @@ MOVE THAT TO A CONFIG FILE
 ownerid = 90878360053366784
 
 description = "Sarasa bot for Hanapara, please give me plenty of cake !"
-client = commands.Bot(command_prefix='$', description=description)
+client = commands.Bot(command_prefix='&', description=description)
 
 client.pm_help = True #Send the help message in PM
 
