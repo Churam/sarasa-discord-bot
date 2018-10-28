@@ -68,8 +68,8 @@ def adduser(userid, username):
             usrdata["title"] = ""
             usrdata["aboutme"] = ""
             usrdata["money"] = 0
-            usrdata["waifu"] = ""
-            usrdata["husbando"] = ""
+            usrdata["waifu"] = []
+            usrdata["husbando"] = []
             usrdata["spark"] = {"crystals" : 0, "tickets" : 0, "10tickets" : 0}
             json.dump(usrdata, x, indent=2, ensure_ascii=False)
 
