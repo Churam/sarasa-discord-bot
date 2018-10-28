@@ -94,21 +94,25 @@ async def on_message(message):
     await client.process_commands(message) #Keep on_message from blocking the function calls
 
 @client.command(description="Check if the bot is active")
-async def active():
+async def active(ctx):
     print("Command received")
-    await client.say("Yes ? Do you need me ?")
+    await ctx.send("Yes ? Do you need me ?")
+
+@client.command()
+async def ctxtest(ctx):
+	await ctx.send("{} {}".format(ctx.author.name, ctx.author.id))
 
 @client.command(description="Restarts the bot")
 async def restart(ctx):
     if ctx.author.id == ownerid:
         print("Restarting the bot")
         msg="Restarting the bot"
-        await client.say(msg)
+        await ctx.send(msg)
         os.execl(sys.executable, sys.executable, *sys.argv)
 
     else:
         msg="What are you trying to do ?! Idiot !"
-        await client.say(msg)
+        await ctx.send(msg)
 
 @client.command(aliases=["cg"])
 async def changegame(ctx,*, text):
@@ -118,32 +122,32 @@ async def changegame(ctx,*, text):
         await client.change_presence(game=discord.Game(name=text))
 
 @client.command()
-async def load(extension_name : str):
+async def load(ctx, extension_name : str):
     """Loads an extension."""
     try:
         client.load_extension(extension_name)
     except (AttributeError, ImportError) as e:
-        await client.say("```py\n{}: {}\n```".format(type(e).__name__, str(e)))
+        await ctx.send("```py\n{}: {}\n```".format(type(e).__name__, str(e)))
         return
-    await client.say("{} loaded.".format(extension_name))
+    await ctx.send("{} loaded.".format(extension_name))
 
 @client.command()
-async def unload(extension_name : str):
+async def unload(ctx, extension_name : str):
     """Unloads an extension."""
     client.unload_extension(extension_name)
-    await client.say("{} unloaded.".format(extension_name))
+    await ctx.send("{} unloaded.".format(extension_name))
 
 
 @client.command()
-async def reload(extension_name : str):
+async def reload(ctx, extension_name : str):
     """Loads an extension."""
     client.unload_extension(extension_name)
     try:
         client.load_extension(extension_name)
     except (AttributeError, ImportError) as e:
-        await client.say("```py\n{}: {}\n```".format(type(e).__name__, str(e)))
+        await ctx.send("```py\n{}: {}\n```".format(type(e).__name__, str(e)))
         return
-    await client.say("{} reloaded.".format(extension_name))
+    await ctx.send("{} reloaded.".format(extension_name))
 
 
 
