@@ -16,7 +16,7 @@ from PIL import ImageFont, Image, ImageDraw
 from io import BytesIO
 import requests
 
-key="6d3da16ddf88957"
+key=OCR_API_KEY
 
 
 class ytdl_logger(object):
