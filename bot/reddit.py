@@ -9,11 +9,11 @@ import praw
 from bs4 import BeautifulSoup #Parser module
 import lxml
 
-reddit = praw.Reddit(client_id='ZH7SK2RyWEZTtQ',
-                     client_secret='pgcA0qxO4xqVjWdUC58ifmvCjx4',
-                     password='nekoneko2798nekoneko',
-                     user_agent='Picture-retrieving script by /u/Akeyro',
-                     username='Akeyro')
+reddit = praw.Reddit(client_id='CLIENT_ID',
+                     client_secret='CLIENT_SECRET',
+                     password='REDDIT_PASSWORD',
+                     user_agent='BOT_DESCRIPTION',
+                     username='REDDIT_USERNAME')
 
 
 #----------------------------------------------------
