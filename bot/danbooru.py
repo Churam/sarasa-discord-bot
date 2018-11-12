@@ -15,7 +15,7 @@ danbooru_api = api_key["API"][1]["danbooru"]
 picbot = Danbooru('danbooru', username='Akeyro', api_key=danbooru_api)
 
 #Danbooru tags to blacklist for the NSFW picture search commands
-tag_blacklist = ["lolicon", "scat", "guro", "vore", "rape", "spoiler", "peeing", "pee", "bestiality", "shota", "loli", 'shotacon', "furry"] 
+tag_blacklist = ["lolicon", "scat", "guro", "vore", "rape", "spoiler", "peeing", "pee", "bestiality", "shota", "loli", "shotacon", "furry"] 
 
 
 def usrdata(userid):
@@ -43,7 +43,7 @@ def adduser(userid):
 
 
 #Simplify the creation of Embeds
-def embedpic(title, pic_url, description=None, url=None, author=None, footer=None, color=0x8c4e68):
+async def embedpic(title, pic_url, description=None, url=None, author=None, footer=None, color=0x8c4e68):
 	em_color = discord.Colour(color)
 	em = discord.Embed(title=title, description=description , url=url, colour=em_color)
 	em.set_image(url=pic_url)
@@ -54,43 +54,67 @@ def embedpic(title, pic_url, description=None, url=None, author=None, footer=Non
 		em.set_footer(text=footer)
 	return em
 
+async def blacklistcheck(tags):
+	for i in tags :
+		if i in blacklist :
+			return True
+	return False
+
 #Simplify the picture search
-def picturesearch(tag, suffix):
+async def picturesearch(tag, nsfw = False, nsfw_only = False, suffix = None, blacklist = True, isRandom = True):
 	tag = str(tag)
 	suffix = str(suffix)
 	max_limit = 200
-	picture = picbot.post_list(tags=tag +" rating:safe", limit=max_limit, random=True)
+	rating = "safe"
+
+	if nsfw_only is True :
+		rating = random.choice(["questionable","explicit"])
+
+	if nsfw is False or nsfw_only is True:
+		tag_search = tag + " rating:{}".format(rating)
+	else :
+		tag_search = tag
+
+	picture = picbot.post_list(
+		tags = tag_search, 
+		limit = max_limit, 
+		random = isRandom)
 	pic_count = len(picture)
+	random_pic = randint(0, pic_count - 1)
 	
-	while True:
-		try:
+	pic_id = str(picture[random_pic]['id'])
+	pic_show = picbot.post_show(pic_id)
+	pic_tags = pic_show["tag_string_general"].split(' ')
+
+	if blacklist is True and blacklistcheck(pic_tags):
+		for i in range(0,5):
 			random_pic = randint(0, pic_count - 1)
-			picture_link = "https://danbooru.donmai.us/posts/" + str(picture[random_pic]['id'])
-			pic_id = str(picture[random_pic]['id'])
-			pic_show = picbot.post_show(pic_id)
 
-			if pic_show['file_url'].startswith("http://") or pic_show['file_url'].startswith("https://") :
-				pic_url = pic_show['file_url']
-			else :
-				pic_url = "https://danbooru.donmai.us{}".format(pic_show['file_url'])
 
-			pic_source = str(pic_show['pixiv_id'])
-			pic_chara = str(pic_show['tag_string_character'])
-			pic_author = pic_show['tag_string_artist']
-		except:
-			continue
-		break
+	if pic_show['file_url'].startswith("http://") or pic_show['file_url'].startswith("https://") :
+		pic_url = pic_show['file_url']
+	else :
+		pic_url = "https://danbooru.donmai.us{}".format(pic_show['file_url'])
+
+	post_link = "https://danbooru.donmai.us/posts/" + str(picture[random_pic]['id'])
+	pic_source = str(pic_show['pixiv_id'])
+	pic_chara = str(pic_show['tag_string_character'])
+	pic_author = pic_show['tag_string_artist']
+
 	if pic_source == "None" or pic_source == None:
 		pic_source = str(pic_show['source'])
 	elif pic_show['source']== "None" or pic_show['source'] == None:
 		pic_source = "No source"
 	else:
 		pic_source = "<https://www.pixiv.net/member_illust.php?mode=medium&illust_id=" + str(pic_show['pixiv_id']) + ">"
+
 	pic_chara = pic_chara.title()
 	pic_chara = pic_chara.replace(" "," and ")
 	pic_chara = pic_chara.replace("_"," ")
-	if " {}".format(suffix) in pic_chara:
+
+	if " {}".format(suffix) in pic_chara and suffix != None:
 		pic_chara = pic_chara.replace(" {}".format(suffix),"")
+
 	if pic_chara.endswith(" "):
 		pic_chara = pic_chara[:-1]
 
