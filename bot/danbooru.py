@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 import json
-from pybooru import Danbooru
+from pybooru import Danbooru, PybooruHTTPError
 from random import randint, randrange, choice
 import random
 import os
@@ -15,7 +15,7 @@ danbooru_api = api_key["API"][1]["danbooru"]
 picbot = Danbooru('danbooru', username='Akeyro', api_key=danbooru_api)
 
 #Danbooru tags to blacklist for the NSFW picture search commands
-tag_blacklist = ["lolicon", "scat", "guro", "vore", "rape", "spoiler", "peeing", "pee", "bestiality", "shota", "loli", "shotacon", "furry"] 
+tag_blacklist = ["lolicon", "scat", "guro", "vore", "rape", "spoiler", "peeing", "pee", "bestiality", "shota", "loli", 'shotacon', "furry"] 
 
 
 def usrdata(userid):
@@ -43,25 +43,26 @@ def adduser(userid):
 
 
 #Simplify the creation of Embeds
-async def embedpic(title, pic_url, description=None, url=None, author=None, footer=None, color=0x8c4e68):
+def embedpic(title, pic_url, description=None, url=None, author=None, footer=None, color=0x8c4e68):
 	em_color = discord.Colour(color)
 	em = discord.Embed(title=title, description=description , url=url, colour=em_color)
 	em.set_image(url=pic_url)
-	em.set_author(name=author)
+	if author != None :
+		em.set_author(name=author)
 	if footer is None:
 		pass
 	else:
 		em.set_footer(text=footer)
 	return em
 
-async def blacklistcheck(tags):
+def blacklistcheck(tags):
 	for i in tags :
-		if i in blacklist :
+		if i in tag_blacklist :
 			return True
 	return False
 
 #Simplify the picture search
-async def picturesearch(tag, nsfw = False, nsfw_only = False, suffix = None, blacklist = True, isRandom = True):
+async def picturesearch(tag, nsfw = False, nsfw_only = False, suffix = None, blacklist = True, isRandom = True, embed = False):
 	tag = str(tag)
 	suffix = str(suffix)
 	max_limit = 200
@@ -75,31 +76,36 @@ async def picturesearch(tag, nsfw = False, nsfw_only = False, suffix = None, bla
 	else :
 		tag_search = tag
 
-	picture = picbot.post_list(
+	posts = picbot.post_list(
 		tags = tag_search, 
 		limit = max_limit, 
 		random = isRandom)
-	pic_count = len(picture)
+	pic_count = len(posts)
 	random_pic = randint(0, pic_count - 1)
 	
-	pic_id = str(picture[random_pic]['id'])
+	pic_id = str(posts[random_pic]['id'])
 	pic_show = picbot.post_show(pic_id)
 	pic_tags = pic_show["tag_string_general"].split(' ')
 
 	if blacklist is True and blacklistcheck(pic_tags):
-		for i in range(0,5):
+		for i in range(0,6):
+			if i == 5 :
+				return None;
 			random_pic = randint(0, pic_count - 1)
-
+			pic_show = picbot.post_show(pic_id)
+			pic_tags = pic_show["tag_string_general"].split(' ')
+			if not blacklistcheck(pic_tags) :
+				break
 
 	if pic_show['file_url'].startswith("http://") or pic_show['file_url'].startswith("https://") :
 		pic_url = pic_show['file_url']
 	else :
 		pic_url = "https://danbooru.donmai.us{}".format(pic_show['file_url'])
 
-	post_link = "https://danbooru.donmai.us/posts/" + str(picture[random_pic]['id'])
+	post_link = "https://danbooru.donmai.us/posts/" + str(posts[random_pic]['id'])
 	pic_source = str(pic_show['pixiv_id'])
-	pic_chara = str(pic_show['tag_string_character'])
-	pic_author = pic_show['tag_string_artist']
+	pic_chara = str(pic_show['tag_string_character'].title().replace(" "," and ").replace("_"," "))
+	pic_author = pic_show['tag_string_artist'].replace("_", " ")
 
 	if pic_source == "None" or pic_source == None:
 		pic_source = str(pic_show['source'])
@@ -108,18 +114,25 @@ async def picturesearch(tag, nsfw = False, nsfw_only = False, suffix = None, bla
 	else:
 		pic_source = "<https://www.pixiv.net/member_illust.php?mode=medium&illust_id=" + str(pic_show['pixiv_id']) + ">"
 
-	pic_chara = pic_chara.title()
-	pic_chara = pic_chara.replace(" "," and ")
-	pic_chara = pic_chara.replace("_"," ")
-
 	if " {}".format(suffix) in pic_chara and suffix != None:
 		pic_chara = pic_chara.replace(" {}".format(suffix),"")
 
 	if pic_chara.endswith(" "):
 		pic_chara = pic_chara[:-1]
 
-	pic_result = {"pic_chara" : pic_chara, "pic_source" : pic_source, "picture_link" : picture_link, "pic_url" : pic_url, "pic_author" : pic_author}
-	return pic_result
+	if embed is True :
+		embed = embedpic(
+			title = tag.replace("_", " "),
+			pic_url = pic_url,
+			description = pic_source,
+			url=post_link,
+			footer=pic_author,
+			color=0x777fc6
+			)
+		return embed
+	else :
+		pic_result = {"pic_chara" : pic_chara, "pic_source" : pic_source, "picture_link" : post_link, "pic_url" : pic_url, "pic_author" : pic_author}
+		return pic_result
 
 
 #Commands
@@ -275,121 +288,82 @@ class Danbooru():
 		m_channel = ctx.message.channel
 		m_author = ctx.message.author
 		await self.client.send_typing(m_channel)
-		em_color = discord.Colour(0x777fc6)
-		pic_result = picturesearch("Granblue_Fantasy", "(Granblue Fantasy)") 
-		em = discord.Embed(title=pic_result["pic_chara"], description=pic_result["pic_source"] , url=pic_result["picture_link"], colour=em_color)
-		em.set_image(url=pic_result["pic_url"])
-		em.set_author(name=m_author.name)
-		em.set_footer(text=pic_result["pic_author"].replace("_", " "))
-		await self.client.say(embed=em)
+		await self.client.say(
+			embed = await picturesearch(tag = "Granblue_Fantasy", suffix = "(Granblue Fantasy)", embed = True)
+			)
 
 	@commands.command(description="Construct a Kanmusu from the great land of Safebooru !",pass_context=True)
 	async def kanmusu(self, ctx):
 		m_channel = ctx.message.channel
 		m_author = ctx.message.author
 		await self.client.send_typing(m_channel)
-		em_color = discord.Colour(0x777fc6)
-		pic_result = picturesearch("Kantai_Collection", "(Kantai Collection)") 
-		em = discord.Embed(title=pic_result["pic_chara"], description=pic_result["pic_source"] , url=pic_result["picture_link"], colour=em_color)
-		em.set_image(url=pic_result["pic_url"])
-		em.set_author(name=m_author.name)
-		em.set_footer(text=pic_result["pic_author"].replace("_", " "))
-		await self.client.say(embed=em)
+		await self.client.say(
+			embed = await picturesearch(tag = "Kantai_Collection", suffix = "(Kantai Collection)", embed = True) 
+			)
 
 
 	@commands.command(description="Construct a T-Doll from the wastelands of Girls' Frontline !",pass_context=True)
 	async def tdoll(self, ctx):
 		m_channel = ctx.message.channel
 		m_author = ctx.message.author
-		await self.client.send_typing(m_channel)
-		em_color = discord.Colour(0x777fc6)
-		pic_result = picturesearch("Girls_Frontline", "(Girls Frontline)") 
-		em = discord.Embed(title=pic_result["pic_chara"], description=pic_result["pic_source"] , url=pic_result["picture_link"], colour=em_color)
-		em.set_image(url=pic_result["pic_url"])
-		em.set_author(name=m_author.name)
-		em.set_footer(text=pic_result["pic_author"].replace("_", " "))
-		await self.client.say(embed=em)
+		await self.client.send_typing(m_channel) 
+		await self.client.say(
+			embed = await picturesearch(tag = "Girls_Frontline", suffix = "(Girls Frontline)", embed = True)
+			)
 
 	@commands.command(description="Will your girl be SHINY ?",pass_context=True)
 	async def lovelive(self, ctx):
 		m_channel = ctx.message.channel
 		m_author = ctx.message.author
 		await self.client.send_typing(m_channel)
-		em_color = discord.Colour(0x777fc6)
-		pic_result = picturesearch("Love_Live!", "(Love Live!)") 
-		em = discord.Embed(title=pic_result["pic_chara"], description=pic_result["pic_source"] , url=pic_result["picture_link"], colour=em_color)
-		em.set_image(url=pic_result["pic_url"])
-		em.set_author(name=m_author.name)
-		em.set_footer(text=pic_result["pic_author"].replace("_", " "))
-		await self.client.say(embed=em)
+		await self.client.say(
+			embed = await picturesearch(tag = "Love_Live!", suffix = "(Love Live!)", embed = True)
+			)
 
 	@commands.command(description="Will your girl be SHINY ?",pass_context=True)
 	async def muse(self, ctx):
 		m_channel = ctx.message.channel
 		m_author = ctx.message.author
-		await self.client.send_typing(m_channel)   
-		em_color = discord.Colour(0x777fc6)
-		pic_result = picturesearch("Love_live!_school_idol_project", "(Love Live!)") 
-		em = discord.Embed(title=pic_result["pic_chara"], description=pic_result["pic_source"] , url=pic_result["picture_link"], colour=em_color)
-		em.set_image(url=pic_result["pic_url"])
-		em.set_author(name=m_author.name)
-		em.set_footer(text=pic_result["pic_author"].replace("_", " "))
-		await self.client.say(embed=em)
+		await self.client.send_typing(m_channel)    
+		await self.client.say(
+			embed = await picturesearch(tag = "Love_live!_school_idol_project", suffix = "(Love Live!)", embed = True)
+			)
 
 	@commands.command(description="Will your girl be SHINY ?",pass_context=True)
 	async def aqours(self, ctx):
 		m_channel = ctx.message.channel
 		m_author = ctx.message.author
 		await self.client.send_typing(m_channel)  
-		em_color = discord.Colour(0x777fc6)
-		pic_result = picturesearch("Love_Live!_Sunshine!!", "(Love Live!)") 
-		em = discord.Embed(title=pic_result["pic_chara"], description=pic_result["pic_source"] , url=pic_result["picture_link"], colour=em_color)
-		em.set_image(url=pic_result["pic_url"])
-		em.set_author(name=m_author.name)
-		em.set_footer(text=pic_result["pic_author"].replace("_", " "))
-		await self.client.say(embed=em)
+		await self.client.say(
+			embed = await picturesearch(tag = "Love_Live!_Sunshine!!", suffix = "(Love Live!)", embed = True)
+			)
 
 	@commands.command(description="Summon a servant from Safebooru !",pass_context=True)
 	async def fate(self, ctx):
 		m_channel = ctx.message.channel
 		m_author = ctx.message.author
 		await self.client.send_typing(m_channel)
-		em_color = discord.Colour(0x777fc6)
-		pic_result = picturesearch("Fate/Grand_Order", "(Fate/Grand Order)") 
-		em = discord.Embed(title=pic_result["pic_chara"], description=pic_result["pic_source"] , url=pic_result["picture_link"], colour=em_color)
-		em.set_image(url=pic_result["pic_url"])
-		em.set_author(name=m_author.name)
-		em.set_footer(text=pic_result["pic_author"].replace("_", " "))
-		await self.client.say(embed=em)
+		await self.client.say(
+			embed = await picturesearch(tag = "Fate/Grand_Order", suffix = "(Fate/Grand Order)", embed = True)
+			)
 
 	@commands.command(description="Construct an Azure Lane shipgirl !",pass_context=True)
 	async def al(self, ctx):
 		m_channel = ctx.message.channel
 		m_author = ctx.message.author
-		await self.client.send_typing(m_channel)
-		em_color = discord.Colour(0x777fc6)
-		pic_result = picturesearch("Azur_Lane", "(Azur Lane)") 
-		em = discord.Embed(title=pic_result["pic_chara"], description=pic_result["pic_source"] , url=pic_result["picture_link"], colour=em_color)
-		em.set_image(url=pic_result["pic_url"])
-		em.set_author(name=m_author.name)
-		em.set_footer(text=pic_result["pic_author"].replace("_", " "))
-		await self.client.say(embed=em)
+		await self.client.send_typing(m_channel) 
+		await self.client.say(
+			embed = await picturesearch(tag = "Azur_Lane", suffix = "(Azur Lane)", embed = True)
+			)
 
 	@commands.command(description="Scout an Idol from Safebooru !",pass_context=True)
-	async def idol(self, ctx):
+	async def imas(self, ctx):
 		m_channel = ctx.message.channel
 		m_author = ctx.message.author
 		await self.client.send_typing(m_channel)
-		em_color = discord.Colour(0x777fc6)
-		pic_result = picturesearch("Idolmaster", "(Idolmaster)")
-		if "Producer" in pic_result["pic_chara"]:
-			pic_result["pic_chara"] = pic_result["pic_chara"].replace("Producer","")
-		em = discord.Embed(title=pic_result["pic_chara"], description=pic_result["pic_source"] , url=pic_result["picture_link"], colour=em_color)
-		em.set_image(url=pic_result["pic_url"])
-		em.set_author(name=m_author.name)
-		em.set_footer(text=pic_result["pic_author"].replace("_", " "))
-		await self.client.say(embed=em)
-
+		await self.client.say(
+			embed = await picturesearch(tag = "Idolmaster", suffix = "(Idolmaster)", embed = True)
+			)
 
 #Waifu/Husbando commands 
 	@commands.group(pass_context=True)
@@ -409,9 +383,7 @@ class Danbooru():
 		path = "./"
 		if waifuname.endswith(" "):
 			waifuname = waifuname[:-1]
-		waifuname_format = waifuname.lower()
-		waifuname_format = waifuname_format.title()
-		waifuname_format = waifuname_format.replace("_", " ")
+		waifuname_format = waifuname.lower().title().replace("_", " ")
 		waifuname = waifuname.replace(" ", "_")
 		with open('./users/{}/userdata.json'.format(m_author_id)) as json_file:
 			datas = json.load(json_file)
@@ -422,6 +394,9 @@ class Danbooru():
 
 		elif waifuname_format in datas["waifu"] :
 				await self.client.say("This character is alrleady in your Waifu list.")
+
+		elif "*" in waifuname :
+			await self.client.say("Please avoid using wildcards (*).")
 
 		else :
 			while True:
@@ -470,6 +445,9 @@ class Danbooru():
 
 		if husbandoname_format in datas["husbando"] :
 			await self.client.say("This character is already in your Husbando list.")
+
+		elif "*" in husbandoname :
+			await self.client.say("Please avoid using wildcards (*).")
 
 		else :
 			picture = picbot.post_list(tags=husbandoname+" rating:safe", limit=200, random=True)
