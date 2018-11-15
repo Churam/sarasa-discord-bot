@@ -43,37 +43,65 @@ def adduser(userid):
 
 
 #Simplify the creation of Embeds
+'''
+Pretty straightforward, creates a simplle embed out of the parameters you feed it.
+
+title : Title of the embed
+pic_url : The url of the previewed picture (Needs to be a direct URL)
+description : Description of the embed
+url : If you want your title to be clickable and redirect to some web adress
+author : Appears above the Title field
+footer : Text to write at the very bottom of the embed
+color : Color to display along with the embed (In Hexadecimal)
+'''
 def embedpic(title, pic_url, description=None, url=None, author=None, footer=None, color=0x8c4e68):
 	em_color = discord.Colour(color)
 	em = discord.Embed(title=title, description=description , url=url, colour=em_color)
 	em.set_image(url=pic_url)
-	if author != None :
+	if author is not None :
 		em.set_author(name=author)
-	if footer is None:
-		pass
-	else:
+	if footer is not None :
 		em.set_footer(text=footer)
 	return em
 
 def blacklistcheck(tags):
-	for i in tags :
-		if i in tag_blacklist :
+	for i in tag_blacklist :
+		if i in tags :
 			return True
 	return False
 
 #Simplify the picture search
-async def picturesearch(tag, nsfw = False, nsfw_only = False, suffix = None, blacklist = True, isRandom = True, embed = False):
-	tag = str(tag)
-	suffix = str(suffix)
-	max_limit = 200
+'''
+This function is the "main" function of this module, it handles most of the picture searching needs.
+I'll roughly explain what each parameters do.
+
+tag : The tag to search. It's required for the function to work. Note that it doesn't need to be formatted for Danbooru's needs, it's handled in the "#Tag formatting" part.
+nsfw : If we want to include NSFW pictures in the results
+nsfw_only : If we ONLY want NSFW pictures in the results
+suffix : If you're looking for pictures of a same serie and want to get rid of the serie suffix in the characters' names
+blacklist : If you want to check the result post's tags through blacklistcheck() to check for any unwanted tags
+isRandom : If we want the 100 posts to be random instead of in chronological order
+embed : If we want the post to return an embed instead of a dict (Mainly used with embedpic() for less code clutter)
+embed_color : Specify a color for the embed (In Hexadecimal)
+'''
+async def picturesearch(tag, nsfw = False, nsfw_only = False, suffix = None, blacklist = True, isRandom = False, embed = False, embed_color = 0x777fc6):
+	max_limit = 100
 	rating = "safe"
+
+	#Tag formatting
+	if tag is None :
+		tag = "order:rank"
+	while tag.endswith(" ") :
+		tag = tag[:-1]
+	if " " in tag :
+		tag = tag.replace(" ", "_")
+
+	tag_search = tag + " rating:{}".format(rating)
 
 	if nsfw_only is True :
 		rating = random.choice(["questionable","explicit"])
-
-	if nsfw is False or nsfw_only is True:
 		tag_search = tag + " rating:{}".format(rating)
-	else :
+	elif nsfw is True:
 		tag_search = tag
 
 	posts = picbot.post_list(
@@ -81,6 +109,8 @@ async def picturesearch(tag, nsfw = False, nsfw_only = False, suffix = None, bla
 		limit = max_limit, 
 		random = isRandom)
 	pic_count = len(posts)
+	if pic_count == 0 :
+		return -1
 	random_pic = randint(0, pic_count - 1)
 	
 	pic_id = str(posts[random_pic]['id'])
@@ -120,16 +150,21 @@ async def picturesearch(tag, nsfw = False, nsfw_only = False, suffix = None, bla
 	if pic_chara.endswith(" "):
 		pic_chara = pic_chara[:-1]
 
+	if tag == "order:rank":
+		title = "Recent popular picture"
+	else :
+		title = tag.replace("_", " ")
+
 	if embed is True :
-		embed = embedpic(
-			title = tag.replace("_", " "),
+		em = embedpic(
+			title = title,
 			pic_url = pic_url,
 			description = pic_source,
 			url=post_link,
 			footer=pic_author,
-			color=0x777fc6
+			color=embed_color
 			)
-		return embed
+		return em
 	else :
 		pic_result = {"pic_chara" : pic_chara, "pic_source" : pic_source, "picture_link" : post_link, "pic_url" : pic_url, "pic_author" : pic_author}
 		return pic_result
@@ -146,141 +181,25 @@ class Danbooru():
 		m_channel = ctx.message.channel
 		m_author = ctx.message.author
 		await self.client.send_typing(m_channel)
-		path = "./"
-		max_limit = 200
-
-		if message is None :
-			picture = picbot.post_list(tags="order:rank"+" rating:safe", limit=max_limit)
-		else :
-			message = str(message)
-			message = message.replace(" ","_")
-			if message.endswith(" "):
-				message = message[:-1]
-			picture = picbot.post_list(tags=message+" rating:safe", limit=max_limit, random=True)
-
-		pic_count = len(picture)
-		if pic_count == 0:
-			await self.client.say("There is no picture with this tag")
-
-		else :
-			while True:
-				try:
-					random_pic = randint(0, pic_count - 1)
-					picture_link = "https://danbooru.donmai.us/posts/" + str(picture[random_pic]['id'])
-					pic_id = str(picture[random_pic]['id'])
-					pic_show = picbot.post_show(pic_id)
-					if pic_show['file_url'].startswith("http://") or pic_show['file_url'].startswith("https://") :
-						pic_url = pic_show['file_url']
-					else :
-						pic_url = "https://danbooru.donmai.us{}".format(pic_show['file_url'])
-					pic_source = str(pic_show['pixiv_id'])
-					pic_author = pic_show['tag_string_artist']
-				except:
-					continue
-				break
-			if pic_source == "None":
-				pic_source = "<" + str(pic_show['source']) + ">"
-			else:
-				pic_source = "<https://www.pixiv.net/member_illust.php?mode=medium&illust_id=" + str(pic_show['pixiv_id']) + ">"
-			em_color = discord.Colour(0x63f94f)
-			if message is None :
-					em = discord.Embed(title="Random popular picture", description=pic_source , url=picture_link, colour=em_color)
-			else :
-				em = discord.Embed(title=message.replace("_"," "), description=pic_source , url=picture_link, colour=em_color)
-			em.set_image(url=pic_url)
-			em.set_author(name=m_author.name)
-			em.set_footer(text=pic_author.replace("_", " "))
-			await self.client.say(embed=em)
+		await self.client.say(
+			embed = await picturesearch(tag = message, embed = True, embed_color = 0x75ff89)
+			)
 
 	@commands.command(description="Retrieve a random NSFW pic of the given tag on Danbooru",pass_context=True)
-	async def hentai(self, ctx, *, message=None):
+	async def hentai(self, ctx, *, message = None):
 		m_channel = ctx.message.channel
 		channelname = m_channel.name
 		m_server = ctx.message.server
 		m_author = ctx.message.author
-		blacklistcheck = False
-		path = "./"
-
+		await self.client.send_typing(m_channel)
 		if "nsfw" not in channelname:
 			await self.client.say("Sorry, you can't do that here")
-
-		else:
-			max_limit = 200
-			blacklist = False
-			if message is None :
-				picture = picbot.post_list(tags="order:rank"+" rating:explicit", limit=max_limit)
-				pic_count = len(picture)
-
-			elif message.lower() in tag_blacklist :
-				await self.client.say("This tag is blacklisted.")
-				blacklist = True
-
+		else :
+			em = await picturesearch(tag = message, nsfw_only = True, embed = True, embed_color = 0xff6ddf)
+			if em is None :
+				await self.client.say("No suitable pictures found.")
 			else :
-				message = str(message)
-				message = message.replace(" ","_")
-				if message.endswith(" "):
-					message = message[:-1]
-				picture = picbot.post_list(tags=message+" rating:explicit", limit=max_limit, random=True)
-				pic_count = len(picture)
-
-
-			if blacklist is True :
-				pass
-
-			elif pic_count == 0:
-				await self.client.say("There is no picture with this tag")
-
-			else :
-				
-				await self.client.send_typing(m_channel)
-				while blacklistcheck is False :
-					tagblacklist = False
-					counter = 0
-					while True and counter < 5:
-						try:
-							random_pic = randint(0, pic_count - 1)
-							picture_link = "https://danbooru.donmai.us/posts/" + str(picture[random_pic]['id'])
-							pic_id = str(picture[random_pic]['id'])
-							pic_show = picbot.post_show(pic_id)
-							pic_author = pic_show['tag_string_artist']
-							if pic_show['file_url'].startswith("http://") or pic_show['file_url'].startswith("https://") :
-								pic_url = pic_show['file_url']
-							else :
-								pic_url = "https://danbooru.donmai.us{}".format(pic_show['file_url'])
-							pic_source = str(pic_show['pixiv_id'])
-							pic_tags = str(pic_show['tag_string_general'])
-						except:
-							continue
-						break
-
-					for i in tag_blacklist:
-						if i in pic_tags :
-							tagblacklist = True
-							counter += 1
-
-					if tagblacklist is False :
-						blacklistcheck = True
-				
-
-				if counter == 5 :
-					await self.client.say("No suitable picture found.")
-
-				else :
-					if pic_source == "None":
-						pic_source = "<" + str(pic_show['source']) + ">"
-					else:
-						pic_source = "<https://www.pixiv.net/member_illust.php?mode=medium&illust_id=" + str(pic_show['pixiv_id']) +">"
-
-					em_color = discord.Colour(0xEb5e88)
-					if message is None :
-						em = discord.Embed(title="Random popular picture", description=pic_source , url=picture_link, colour=em_color)
-					else :
-						em = discord.Embed(title=message.replace("_"," "), description=pic_source , url=picture_link, colour=em_color)
-					em.set_image(url=pic_url)
-					em.set_author(name=m_author.name)
-					em.set_footer(text=pic_author.replace("_", " "))
-					await self.client.say(embed=em)
-
+				await self.client.say(embed=em)
 
 #Series picture search
 	@commands.command(description="Recruit a Granblue Fantasy character from Safebooru !",pass_context=True)
@@ -374,112 +293,55 @@ class Danbooru():
 		if ctx.invoked_subcommand is None:
 			await self.client.say("Available subcommands : `waifu` `husbando`")
 
-
 	@add.command(pass_context=True, name="waifu")
 	async def _waifu(self, ctx, *, waifuname : str):
 		m_author = ctx.message.author
 		m_author_id = ctx.message.author.id
 		adduser(m_author_id)
-		path = "./"
-		if waifuname.endswith(" "):
+		while waifuname.endswith(" "):
 			waifuname = waifuname[:-1]
 		waifuname_format = waifuname.lower().title().replace("_", " ")
-		waifuname = waifuname.replace(" ", "_")
 		with open('./users/{}/userdata.json'.format(m_author_id)) as json_file:
 			datas = json.load(json_file)
-		picture = picbot.post_list(tags=waifuname+" rating:safe", limit=200, random=True)
-		pic_count = len(picture)
-		if pic_count == 0:
-			await self.client.say("There is no waifu with this tag.")
 
-		elif waifuname_format in datas["waifu"] :
-				await self.client.say("This character is alrleady in your Waifu list.")
-
+		if waifuname_format in datas["waifu"] :
+				await self.client.say("This character is already in your Waifu list.")
 		elif "*" in waifuname :
 			await self.client.say("Please avoid using wildcards (*).")
-
 		else :
-			while True:
-				try:
-					random_pic = randint(0, pic_count - 1)
-					picture_link = "https://danbooru.donmai.us/posts/" + str(picture[random_pic]['id'])
-					pic_id = str(picture[random_pic]['id'])
-					pic_show = picbot.post_show(pic_id)
-					if pic_show['file_url'].startswith("http://") or pic_show['file_url'].startswith("https://") :
-						pic_url = pic_show['file_url']
-					else :
-						pic_url = "https://danbooru.donmai.us{}".format(pic_show['file_url'])
-					pic_source = str(pic_show['pixiv_id'])
-					pic_author = pic_show['tag_string_artist']
-				except:
-					continue
-				break
-			if pic_source == "None":
-				pic_source = "<" + str(pic_show['source']) + ">"
-			else:
-				pic_source = "<https://www.pixiv.net/member_illust.php?mode=medium&illust_id=" + str(pic_show['pixiv_id']) + ">"
-			em_color = discord.Colour(0xff6868)
-			em = discord.Embed(title=waifuname_format, description="Successfully added {} in your Waifu list".format(waifuname_format) , url=picture_link, colour=em_color)
-			em.set_image(url=pic_url)
-			em.set_author(name=m_author.name)
-			em.set_footer(text=pic_author.replace("_", " "))
-			await self.client.say(embed=em)
-			with open('./users/{}/userdata.json'.format(m_author_id), mode='w', encoding='utf-8') as json_file:
-				datas["waifu"].append(waifuname_format)
-				json.dump(datas, json_file, indent=2)
+			em = await picturesearch(tag = waifuname, embed = True, embed_color = 0xff6868)
+			if em == -1 :
+				await self.client.say("There is no waifu with this tag.")
+			else :
+				em.description = "Successfully added {} in your Waifu list".format(waifuname_format)
+				em.set_author(name=m_author.name)
+				await self.client.say(embed=em)
+				with open('./users/{}/userdata.json'.format(m_author_id), mode='w', encoding='utf-8') as json_file:
+					datas["waifu"].append(waifuname_format)
+					json.dump(datas, json_file, indent=2)
 
 	@add.command(pass_context=True, name="husbando")
 	async def _husbando(self, ctx, *, husbandoname : str):
 		m_author = ctx.message.author
 		m_author_id = ctx.message.author.id
 		adduser(m_author_id)
-		path = "./"
-		if husbandoname.endswith(" "):
+		while husbandoname.endswith(" "):
 			husbandoname = husbandoname[:-1]
-		husbandoname_format = husbandoname.lower()
-		husbandoname_format = husbandoname_format.title()
-		husbandoname_format = husbandoname_format.replace("_", " ")
-		husbandoname = husbandoname.replace(" ", "_")
+		husbandoname_format = husbandoname.lower().title().replace("_", " ")
 		with open('./users/{}/userdata.json'.format(m_author_id)) as json_file:
 			datas = json.load(json_file)
 
 		if husbandoname_format in datas["husbando"] :
-			await self.client.say("This character is already in your Husbando list.")
-
+				await self.client.say("This character is already in your husbando list.")
 		elif "*" in husbandoname :
 			await self.client.say("Please avoid using wildcards (*).")
-
 		else :
-			picture = picbot.post_list(tags=husbandoname+" rating:safe", limit=200, random=True)
-			pic_count = len(picture)
-			if pic_count == 0:
+			em = await picturesearch(tag = husbandoname, embed = True, embed_color = 0x777fc6)
+			if em == -1 :
 				await self.client.say("There is no husbando with this tag.")
-
 			else :
-				while True:
-					try:
-						random_pic = randint(0, pic_count - 1)
-						picture_link = "https://danbooru.donmai.us/posts/" + str(picture[random_pic]['id'])
-						pic_id = str(picture[random_pic]['id'])
-						pic_show = picbot.post_show(pic_id)
-						if pic_show['file_url'].startswith("http://") or pic_show['file_url'].startswith("https://") :
-							pic_url = pic_show['file_url']
-						else :
-							pic_url = "https://danbooru.donmai.us{}".format(pic_show['file_url'])
-						pic_source = str(pic_show['pixiv_id'])
-						pic_author = pic_show['tag_string_artist']
-					except:
-						continue
-					break
-				if pic_source == "None":
-					pic_source = "<" + str(pic_show['source']) + ">"
-				else:
-					pic_source = "<https://www.pixiv.net/member_illust.php?mode=medium&illust_id=" + str(pic_show['pixiv_id']) + ">"
-				em_color = discord.Colour(0x777fc6)
-				em = discord.Embed(title=husbandoname_format, description="Successfully added {} in your Husbando list".format(husbandoname_format) , url=picture_link, colour=em_color)
-				em.set_image(url=pic_url)
+				em.description = "Successfully added {} in your husbando list".format(husbandoname_format)
 				em.set_author(name=m_author.name)
-				em.set_footer(text=pic_author.replace("_", " "))
 				await self.client.say(embed=em)
 				with open('./users/{}/userdata.json'.format(m_author_id), mode='w', encoding='utf-8') as json_file:
 					datas["husbando"].append(husbandoname_format)
@@ -501,7 +363,6 @@ class Danbooru():
 		waifuname_format = waifuname_format.replace("_", " ")
 		if waifuname_format not in datas["waifu"]:
 			await self.client.say("This waifu isn't in your list.")
-
 		else :
 			with open('./users/{}/userdata.json'.format(m_author_id), mode='w', encoding='utf-8') as json_file:
 				datas["waifu"].remove(waifuname_format)
@@ -519,7 +380,6 @@ class Danbooru():
 		husbandoname_format = husbandoname_format.replace("_", " ")
 		if husbandoname_format not in datas["husbando"]:
 			await self.client.say("This husbando isn't in your list.")
-
 		else :
 			with open('./users/{}/userdata.json'.format(m_author_id), mode='w', encoding='utf-8') as json_file:
 				datas["husbando"].remove(husbandoname_format)
@@ -534,48 +394,22 @@ class Danbooru():
 		await self.client.send_typing(m_channel)
 		with open('./users/{}/userdata.json'.format(m_author_id)) as json_file:
 			datas = json.load(json_file)
-		path = "./"
-		max_limit = 200
 		if nb > 5 :
 			await self.client.say("You can only request up to 5 pictures at once.")
 		else :
 			for i in range(nb) :
 				tag = choice(datas["waifu"])
-				picture = picbot.post_list(tags=tag.replace(" ", "_")+" rating:safe", limit=max_limit)
-				pic_count = len(picture)
-				print(picture)
-				if pic_count == 0:
-					await self.client.say("There is no picture with this tag, the tag `{}` might have changed.".format(tag))
-
-				elif tag is "" :
+				if tag is "" :
 					await self.client.say("You have no waifu. Please register one with $add waifu")
 
+				em = await picturesearch(tag = tag, embed = True, embed_color = 0xff6868)
+				em.set_author(name = m_author.name)
+				if em == -1:
+					await self.client.say("There is no picture with this tag, the tag `{}` might have changed.".format(tag))
+				elif em is None :
+					await self.client.say("No suitable picture found")
 				else :
-					while True :
-						try :
-							random_pic = randint(0, pic_count - 1)
-							picture_link = "https://danbooru.donmai.us/posts/" + str(picture[random_pic]['id'])
-							pic_id = str(picture[random_pic]['id'])
-							pic_show = picbot.post_show(pic_id)
-							if pic_show['file_url'].startswith("http://") or pic_show['file_url'].startswith("https://") :
-								pic_url = pic_show['file_url']
-							else :
-								pic_url = "https://danbooru.donmai.us{}".format(pic_show['file_url'])
-							pic_source = str(pic_show['pixiv_id'])
-							pic_author = pic_show["tag_string_artist"]
-						except :
-							continue
-						break
-
-					if pic_source == "None":
-						pic_source = "<" + str(pic_show['source']) + ">"
-					else:
-						pic_source = "<https://www.pixiv.net/member_illust.php?mode=medium&illust_id=" + str(pic_show['pixiv_id']) + ">"
-					try :
-						await self.client.say(embed=embedpic(title=tag, description=pic_source, url=picture_link, pic_url=pic_url, author=m_author.name, footer=pic_author.replace("_", " "), color=0xff6868))
-					except Exception as e:
-						print(e)
-						print("Couldn't send picture : tag : {}\npic_source : {}\npic_link : {}\npic_url : {}\nmsg_author : {}\npic_author : {}".format(tag,pic_source,picture_link,pic_url,m_author.name,pic_author))
+					await self.client.say(embed=em)
 
 	@commands.command(description="Get a picture of one of your husbando", pass_context=True, aliases=["h"])
 	async def husbando(self, ctx, nb=1):
@@ -585,55 +419,22 @@ class Danbooru():
 		await self.client.send_typing(m_channel)
 		with open('./users/{}/userdata.json'.format(m_author_id)) as json_file:
 			datas = json.load(json_file)
-		path = "./"
-		max_limit = 200
 		if nb > 5 :
 			await self.client.say("You can only request up to 5 pictures at once.")
 		else :
-			for i in range(nb):
+			for i in range(nb) :
 				tag = choice(datas["husbando"])
-				picture = picbot.post_list(tags=tag.replace(" ", "_")+" rating:safe", limit=max_limit, random=True)
-				pic_count = len(picture)
-
-				if pic_count == 0:
-					await self.client.say("There is no picture with this tag, the tag `{}` might have changed.".format(tag))
-
-				elif tag is "" :
+				if tag is "" :
 					await self.client.say("You have no husbando. Please register one with $add husbando")
 
+				em = await picturesearch(tag = tag, embed = True, embed_color = 0xab61d3)
+				em.set_author(name = m_author.name)
+				if em == -1:
+					await self.client.say("There is no picture with this tag, the tag `{}` might have changed.".format(tag))
+				elif em is None :
+					await self.client.say("No suitable picture found")
 				else :
-					while True :
-						try :
-							random_pic = randint(0, pic_count - 1)
-							picture_link = "https://danbooru.donmai.us/posts/" + str(picture[random_pic]['id'])
-							pic_id = str(picture[random_pic]['id'])
-							pic_show = picbot.post_show(pic_id)
-							if pic_show['file_url'].startswith("http://") or pic_show['file_url'].startswith("https://") :
-								pic_url = pic_show['file_url']
-							else :
-								pic_url = "https://danbooru.donmai.us{}".format(pic_show['file_url'])
-							pic_source = str(pic_show['pixiv_id'])
-							pic_author = pic_show['tag_string_artist']
-						except :
-							continue
-						break
-					if pic_source == "None":
-						pic_source = "<" + str(pic_show['source']) + ">"
-					else:
-						pic_source = "<https://www.pixiv.net/member_illust.php?mode=medium&illust_id=" + str(pic_show['pixiv_id']) + ">"
-
-					em_color = discord.Colour(0x777fc6)
-					em = discord.Embed(title=tag, description=pic_source , url=picture_link, colour=em_color)
-					em.set_image(url=pic_url)
-					em.set_author(name=m_author.name)
-					em.set_footer(text=pic_author.replace("_", " "))
-					try :
-						await self.client.say(embed=embedpic(title=tag, description=pic_source, url=picture_link, pic_url=pic_url, author=m_author.name, footer=pic_author.replace("_", " "), color=0x777fc6))
-					except Exception as e:
-						print(e)
-						print("Couldn't send picture : tag : {}\npic_source : {}\npic_link : {}\npic_url : {}\nmsg_author : {}\npic_author : {}".format(tag,pic_source,picture_link,pic_url,m_author.name,pic_author))
-
-
+					await self.client.say(embed=em)
 
 	@commands.command(description="Get a lewd picture of one of your waifu", pass_context=True, aliases=["lw"])
 	async def lewdwaifu(self, ctx, nb=1):
@@ -641,79 +442,28 @@ class Danbooru():
 		m_author = ctx.message.author
 		m_author_id = m_author.id
 		await self.client.send_typing(m_channel)
-		rating = choice(["e","q"])
 		with open('./users/{}/userdata.json'.format(m_author_id)) as json_file:
 			datas = json.load(json_file)
-		path = "./"
-		max_limit = 200
 		if nb > 5 :
 			await self.client.say("You can only request up to 5 pictures at once.")
 		else :
-			for i in range(nb):
+			for i in range(nb) :
 				tag = choice(datas["waifu"])
-				picture = picbot.post_list(tags=tag.replace(" ", "_") + " rating:{}".format(rating), limit=max_limit)
-				pic_count = len(picture)
-				print(picture)
-				if pic_count == 0:
-					await self.client.say("There is no picture with this tag, the tag `{}` might have changed.".format(tag))
-
-				elif tag is "" :
+				if tag is "" :
 					await self.client.say("You have no waifu. Please register one with $add waifu")
 
-				elif "nsfw" not in ctx.message.channel.name :
-					await self.client.say("Sorry you can't do that here.")
-
+				em = await picturesearch(tag = tag, nsfw_only = True, embed = True, embed_color = 0xff6868)
+				em.set_author(name = m_author.name)
+				if em == -1:
+					await self.client.say("There is no picture with this tag, the tag `{}` might have changed.".format(tag))
+				elif em is None :
+					await self.client.say("No suitable picture found")
 				else :
-					blacklistcheck = False
-					counter = 0
-					while blacklistcheck is False and counter < 5:
-						tagblacklist = False
-						while True :
-							try :
-								random_pic = randint(0, pic_count - 1)
-								picture_link = "https://danbooru.donmai.us/posts/" + str(picture[random_pic]['id'])
-								pic_id = str(picture[random_pic]['id'])
-								pic_show = picbot.post_show(pic_id)
-								if pic_show['file_url'].startswith("http://") or pic_show['file_url'].startswith("https://") :
-									pic_url = pic_show['file_url']
-								else :
-									pic_url = "https://danbooru.donmai.us{}".format(pic_show['file_url'])
-								pic_source = str(pic_show['pixiv_id'])
-								pic_tags = str(pic_show['tag_string_general'])
-								pic_author = pic_show['tag_string_artist']
-							except:
-								continue
-							break
-
-						for i in tag_blacklist:
-							if i in pic_tags :
-								print("Blacklisted tag detected : {} for the tag {}".format(i,tag))
-								tagblacklist = True
-								counter +=1
-
-						if tagblacklist is False :
-							blacklistcheck = True
-
-					if counter == 5 :
-						await self.client.say("No suitable picture found.")
-
-					else :
-
-						if pic_source == "None":
-							pic_source = "<" + str(pic_show['source']) + ">"
-						else:
-							pic_source = "<https://www.pixiv.net/member_illust.php?mode=medium&illust_id=" + str(pic_show['pixiv_id']) + ">"
-
-						em_color = discord.Colour(0x8c4e68)
-						em = discord.Embed(title=tag, description=pic_source , url=picture_link, colour=em_color)
-						em.set_image(url=pic_url)
-						em.set_author(name=m_author.name)
-						em.set_footer(text=pic_author.replace("_", " "))
-						try :
-							await self.client.say(embed=em)
-						except Exception as e:
-							print(e)
-							print("Couldn't send picture : tag : {}\npic_source : {}\npic_link : {}\npic_url : {}\nmsg_author : {}\npic_author : {}".format(tag,pic_source,picture_link,pic_url,m_author.name,pic_author))
+					try :
+						await self.client.say(embed=em)
+					except Exception as e:
+						print(e)
+						print("Couldn't send picture : tag : {}\npic_source : {}\npic_link : {}\npic_url : {}\nmsg_author : {}\npic_author : {}".format(tag,pic_source,picture_link,pic_url,m_author.name,pic_author))
 
 
 	@commands.command(description="Get a lewd picture of one of your husbando", pass_context=True, aliases=["lh"])
@@ -722,80 +472,28 @@ class Danbooru():
 		m_author = ctx.message.author
 		m_author_id = m_author.id
 		await self.client.send_typing(m_channel)
-		rating = choice(["explicit","questionable"])
 		with open('./users/{}/userdata.json'.format(m_author_id)) as json_file:
 			datas = json.load(json_file)
-
-		path = "./"
-		max_limit = 200
 		if nb > 5 :
 			await self.client.say("You can only request up to 5 pictures at once.")
 		else :
-			for i in range(nb):
+			for i in range(nb) :
 				tag = choice(datas["husbando"])
-				picture = picbot.post_list(tags=tag.replace(" ", "_")+" rating:{}".format(rating), limit=max_limit, random=True)
-				pic_count = len(picture)
-
-				if pic_count == 0:
-					await self.client.say("There is no picture with this tag, the tag `{}` might have changed.".format(tag))
-				elif tag is "" :
+				if tag is "" :
 					await self.client.say("You have no husbando. Please register one with $add husbando")
 
-				elif "nsfw" not in ctx.message.channel.name :
-					await self.client.say("Sorry you can't do that here.")
-
+				em = await picturesearch(tag = tag, nsfw_only = True, embed = True, embed_color = 0xab61d3)
+				em.set_author(name = m_author.name)
+				if em == -1:
+					await self.client.say("There is no picture with this tag, the tag `{}` might have changed.".format(tag))
+				elif em is None :
+					await self.client.say("No suitable picture found")
 				else :
-					blacklistcheck = False
-					counter = 0
-					while blacklistcheck is False and counter < 5:
-						tagblacklist = False
-						while True :
-							try:
-								random_pic = randint(0, pic_count - 1)
-								picture_link = "https://danbooru.donmai.us/posts/" + str(picture[random_pic]['id'])
-								pic_id = str(picture[random_pic]['id'])
-								pic_show = picbot.post_show(pic_id)
-								if pic_show['file_url'].startswith("http://") or pic_show['file_url'].startswith("https://") :
-									pic_url = pic_show['file_url']
-								else :
-									pic_url = "https://danbooru.donmai.us{}".format(pic_show['file_url'])
-								pic_source = str(pic_show['pixiv_id'])
-								pic_tags = str(pic_show['tag_string_general'])
-								pic_author = pic_show['tag_string_artist']
-							except:
-								continue
-							break
-
-						for i in tag_blacklist:
-							if i in pic_tags :
-								print("Blacklisted tag detected : {} for the tag {}".format(i,tag))
-								tagblacklist = True
-								counter += 1
-
-						if tagblacklist is False :
-							blacklistcheck = True
-
-
-					if counter == 5 :
-						await self.client.say("No suitable picture found.")
-
-					else :
-
-						if pic_source == "None":
-							pic_source = "<" + str(pic_show['source']) + ">"
-						else:
-							pic_source = "<https://www.pixiv.net/member_illust.php?mode=medium&illust_id=" + str(pic_show['pixiv_id']) + ">"
-
-						em_color = discord.Colour(0x8c4e68)
-						em = discord.Embed(title=tag, description=pic_source , url=picture_link, colour=em_color)
-						em.set_image(url=pic_url)
-						em.set_author(name=m_author.name)
-						em.set_footer(text=pic_author.replace("_", " "))
-						try :
-							await self.client.say(embed=em)
-						except Exception as e:
-							print(e)
-							print("Couldn't send picture : tag : {}\npic_source : {}\npic_link : {}\npic_url : {}\nmsg_author : {}\npic_author : {}".format(tag,pic_source,picture_link,pic_url,m_author.name,pic_author))
+					try :
+						await self.client.say(embed=em)
+					except Exception as e:
+						print(e)
+						print("Couldn't send picture : tag : {}\npic_source : {}\npic_link : {}\npic_url : {}\nmsg_author : {}\npic_author : {}".format(tag,pic_source,picture_link,pic_url,m_author.name,pic_author))
 
 
 	@commands.command(description="List your waifus", pass_context=True, aliases=["wl"])
@@ -864,6 +562,5 @@ class Danbooru():
 			text += "\n- For a total of {} Husbando(s)\n```".format(len(waifu_list))
 			await self.client.say(text)
 			
-
 def setup(bot):
 	bot.add_cog(Danbooru(bot))
