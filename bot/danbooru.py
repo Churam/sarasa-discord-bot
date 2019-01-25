@@ -182,94 +182,94 @@ class Danbooru():
 
 	@commands.command(description="Retrieve a random safe pic of the given tag on Danbooru")
 	async def safe(self, ctx, *, message=None):
-		await self.ctx.channel.trigger_typing()
-		await self.client.say(
+		await ctx.channel.trigger_typing()
+		await ctx.send(
 			embed = await picturesearch(tag = message, embed = True, embed_color = 0x75ff89)
 			)
 
 	@commands.command(description="Retrieve a random NSFW pic of the given tag on Danbooru")
 	async def hentai(self, ctx, *, message = None):
-		await self.ctx.channel.trigger_typing()
-		if "nsfw" not in channelname:
-			await self.client.send("Sorry, you can't do that here")
+		await ctx.channel.trigger_typing()
+		if not ctx.channel.is_nsfw():
+			await ctx.send("Sorry, you can't do that here")
 		else :
 			em = await picturesearch(tag = message, nsfw_only = True, embed = True, embed_color = 0xff6ddf)
 			if em is None :
-				await self.client.send("No suitable pictures found.")
+				await ctx.send("No suitable pictures found.")
 			else :
-				await self.client.send(embed=em)
+				await ctx.send(embed=em)
 
 #Series picture search
 	@commands.command(description="Recruit a Granblue Fantasy character from Safebooru !")
 	async def gbf(self, ctx):
-		await self.ctx.channel.trigger_typing()
-		await self.client.say(
+		await ctx.channel.trigger_typing()
+		await ctx.send(
 			embed = await picturesearch(tag = "Granblue_Fantasy", suffix = "(Granblue Fantasy)", embed = True)
 			)
 
 	@commands.command(description="Construct a Kanmusu from the great land of Safebooru !")
 	async def kanmusu(self, ctx):
-		await self.ctx.channel.trigger_typing()
-		await self.client.send(
+		await ctx.channel.trigger_typing()
+		await ctx.send(
 			embed = await picturesearch(tag = "Kantai_Collection", suffix = "(Kantai Collection)", embed = True) 
 			)
 
 
 	@commands.command(description="Construct a T-Doll from the wastelands of Girls' Frontline !")
 	async def tdoll(self, ctx):
-		await self.ctx.channel.trigger_typing()
-		await self.client.send(
+		await ctx.channel.trigger_typing()
+		await ctx.send(
 			embed = await picturesearch(tag = "Girls_Frontline", suffix = "(Girls Frontline)", embed = True)
 			)
 
 	@commands.command(description="Will your girl be SHINY ?")
 	async def lovelive(self, ctx):
-		await self.ctx.channel.trigger_typing()
-		await self.client.send(
+		await ctx.channel.trigger_typing()
+		await ctx.send(
 			embed = await picturesearch(tag = "Love_Live!", suffix = "(Love Live!)", embed = True)
 			)
 
 	@commands.command(description="Will your girl be SHINY ?")
 	async def muse(self, ctx):
-		await self.ctx.channel.trigger_typing() 
-		await self.client.send(
+		await ctx.channel.trigger_typing() 
+		await ctx.send(
 			embed = await picturesearch(tag = "Love_live!_school_idol_project", suffix = "(Love Live!)", embed = True)
 			)
 
 	@commands.command(description="Will your girl be SHINY ?")
 	async def aqours(self, ctx):
-		await self.ctx.channel.trigger_typing()
-		await self.client.send(
+		await ctx.channel.trigger_typing()
+		await ctx.send(
 			embed = await picturesearch(tag = "Love_Live!_Sunshine!!", suffix = "(Love Live!)", embed = True)
 			)
 
 	@commands.command(description="Summon a servant from Safebooru !")
 	async def fate(self, ctx):
-		await self.ctx.channel.trigger_typing()
-		await self.client.send(
+		await ctx.channel.trigger_typing()
+		await ctx.send(
 			embed = await picturesearch(tag = "Fate/Grand_Order", suffix = "(Fate/Grand Order)", embed = True)
 			)
 
 	@commands.command(description="Construct an Azure Lane shipgirl !")
 	async def al(self, ctx):
-		await self.ctx.channel.trigger_typing()
-		await self.client.send(
+		await ctx.channel.trigger_typing()
+		await ctx.send(
 			embed = await picturesearch(tag = "Azur_Lane", suffix = "(Azur Lane)", embed = True)
 			)
 
 	@commands.command(description="Scout an Idol from Safebooru !")
 	async def imas(self, ctx):
-		await self.ctx.channel.trigger_typing()
-		await self.client.send(
+		await ctx.channel.trigger_typing()
+		await ctx.send(
 			embed = await picturesearch(tag = "Idolmaster", suffix = "(Idolmaster)", embed = True)
 			)
 
 #Waifu/Husbando commands 
 	@commands.group(pass_context=True)
 	async def add(self, ctx):
-		await self.ctx.channel.trigger_typing()
+		await ctx.channel.trigger_typing()
 		if ctx.invoked_subcommand is None:
-			await self.client.send("Available subcommands : `waifu` `husbando`")
+			await ctx.send("Available subcommands : `waifu` `husbando`")
 
 	@add.command(pass_context=True, name="waifu")
 	async def _waifu(self, ctx, *, waifuname : str):
@@ -283,17 +283,17 @@ class Danbooru():
 			datas = json.load(json_file)
 
 		if waifuname_format in datas["waifu"] :
-				await self.client.send("This character is already in your Waifu list.")
+				await ctx.send("This character is already in your Waifu list.")
 		elif "*" in waifuname :
-			await self.client.send("Please avoid using wildcards (*).")
+			await ctx.send("Please avoid using wildcards (*).")
 		else :
 			em = await picturesearch(tag = waifuname, embed = True, embed_color = 0xff6868)
 			if em == -1 :
-				await self.client.send("There is no waifu with this tag.")
+				await ctx.send("There is no waifu with this tag.")
 			else :
 				em.description = "Successfully added {} in your Waifu list".format(waifuname_format)
 				em.set_author(name=m_author.name)
-				await self.client.send(embed=em)
+				await ctx.send(embed=em)
 				with open('./users/{}/userdata.json'.format(m_author_id), mode='w', encoding='utf-8') as json_file:
 					datas["waifu"].append(waifuname_format)
 					json.dump(datas, json_file, indent=2)
@@ -310,17 +310,17 @@ class Danbooru():
 			datas = json.load(json_file)
 
 		if husbandoname_format in datas["husbando"] :
-				await self.client.send("This character is already in your husbando list.")
+				await ctx.send("This character is already in your husbando list.")
 		elif "*" in husbandoname :
-			await self.client.send("Please avoid using wildcards (*).")
+			await ctx.send("Please avoid using wildcards (*).")
 		else :
 			em = await picturesearch(tag = husbandoname, embed = True, embed_color = 0x777fc6)
 			if em == -1 :
-				await self.client.send("There is no husbando with this tag.")
+				await ctx.send("There is no husbando with this tag.")
 			else :
 				em.description = "Successfully added {} in your husbando list".format(husbandoname_format)
 				em.set_author(name=m_author.name)
-				await self.client.send(embed=em)
+				await ctx.send(embed=em)
 				with open('./users/{}/userdata.json'.format(m_author_id), mode='w', encoding='utf-8') as json_file:
 					datas["husbando"].append(husbandoname_format)
 					json.dump(datas, json_file, indent=2)
@@ -328,7 +328,7 @@ class Danbooru():
 	@commands.group(description="Remove a waifu or husbando from your list")
 	async def remove(self, ctx):
 		if ctx.invoked_subcommand is None:
-			await self.client.send("Available subcommands : `waifu` `husbando`")
+			await ctx.send("Available subcommands : `waifu` `husbando`")
 
 	@remove.command(name="waifu")
 	async def remwaifu(self, ctx,* , waifuname : str):
@@ -340,12 +340,12 @@ class Danbooru():
 		waifuname_format = waifuname_format.title()
 		waifuname_format = waifuname_format.replace("_", " ")
 		if waifuname_format not in datas["waifu"]:
-			await self.client.send("This waifu isn't in your list.")
+			await ctx.send("This waifu isn't in your list.")
 		else :
 			with open('./users/{}/userdata.json'.format(m_author_id), mode='w', encoding='utf-8') as json_file:
 				datas["waifu"].remove(waifuname_format)
 				json.dump(datas, json_file, indent=2)
-			await self.client.send("Successfully removed **{}** from your Waifu list.".format(waifuname_format))
+			await ctx.send("Successfully removed **{}** from your Waifu list.".format(waifuname_format))
 
 	@remove.command(name="husbando")
 	async def remhusbando(self, ctx,* , husbandoname : str):
@@ -357,88 +357,88 @@ class Danbooru():
 		husbandoname_format = husbandoname_format.title()
 		husbandoname_format = husbandoname_format.replace("_", " ")
 		if husbandoname_format not in datas["husbando"]:
-			await self.client.send("This husbando isn't in your list.")
+			await ctx.send("This husbando isn't in your list.")
 		else :
 			with open('./users/{}/userdata.json'.format(m_author_id), mode='w', encoding='utf-8') as json_file:
 				datas["husbando"].remove(husbandoname_format)
 				json.dump(datas, json_file, indent=2)
-			await self.client.send("Successfully removed **{}** from your Husbando list.".format(husbandoname_format))
+			await ctx.send("Successfully removed **{}** from your Husbando list.".format(husbandoname_format))
 
 	@commands.command(description="Get a picture of one your waifu", aliases=["w"])
 	async def waifu(self, ctx, nb=1):
 		m_channel = ctx.message.channel
 		m_author = ctx.message.author
 		m_author_id = m_author.id
-		await self.ctx.channel.trigger_typing()
+		await ctx.channel.trigger_typing()
 		with open('./users/{}/userdata.json'.format(m_author_id)) as json_file:
 			datas = json.load(json_file)
 		if nb > 5 :
-			await self.client.send("You can only request up to 5 pictures at once.")
+			await ctx.send("You can only request up to 5 pictures at once.")
 		else :
 			for i in range(nb) :
 				tag = choice(datas["waifu"])
 				if tag is "" :
-					await self.client.send("You have no waifu. Please register one with $add waifu")
+					await ctx.send("You have no waifu. Please register one with $add waifu")
 
 				em = await picturesearch(tag = tag, embed = True, embed_color = 0xff6868)
 				em.set_author(name = m_author.name)
 				if em == -1:
-					await self.client.send("There is no picture with this tag, the tag `{}` might have changed.".format(tag))
+					await ctx.send("There is no picture with this tag, the tag `{}` might have changed.".format(tag))
 				elif em is None :
-					await self.client.send("No suitable picture found")
+					await ctx.send("No suitable picture found")
 				else :
-					await self.client.send(embed=em)
+					await ctx.send(embed=em)
 
 	@commands.command(description="Get a picture of one of your husbando", aliases=["h"])
 	async def husbando(self, ctx, nb=1):
 		m_channel = ctx.message.channel
 		m_author = ctx.message.author
 		m_author_id = m_author.id
-		await self.ctx.channel.trigger_typing()
+		await ctx.channel.trigger_typing()
 		with open('./users/{}/userdata.json'.format(m_author_id)) as json_file:
 			datas = json.load(json_file)
 		if nb > 5 :
-			await self.client.send("You can only request up to 5 pictures at once.")
+			await ctx.send("You can only request up to 5 pictures at once.")
 		else :
 			for i in range(nb) :
 				tag = choice(datas["husbando"])
 				if tag is "" :
-					await self.client.send("You have no husbando. Please register one with $add husbando")
+					await ctx.send("You have no husbando. Please register one with $add husbando")
 
 				em = await picturesearch(tag = tag, embed = True, embed_color = 0xab61d3)
 				em.set_author(name = m_author.name)
 				if em == -1:
-					await self.client.send("There is no picture with this tag, the tag `{}` might have changed.".format(tag))
+					await ctx.send("There is no picture with this tag, the tag `{}` might have changed.".format(tag))
 				elif em is None :
-					await self.client.send("No suitable picture found")
+					await ctx.send("No suitable picture found")
 				else :
-					await self.client.send(embed=em)
+					await ctx.send(embed=em)
 
 	@commands.command(description="Get a lewd picture of one of your waifu", aliases=["lw"])
 	async def lewdwaifu(self, ctx, nb=1):
-		m_channel = ctx.message.channel
-		m_author = ctx.message.author
+		m_channel = ctx.channel
+		m_author = ctx.author
 		m_author_id = m_author.id
-		await self.ctx.channel.trigger_typing()
+		await ctx.channel.trigger_typing()
 		with open('./users/{}/userdata.json'.format(m_author_id)) as json_file:
 			datas = json.load(json_file)
 		if nb > 5 :
-			await self.client.send("You can only request up to 5 pictures at once.")
+			await ctx.send("You can only request up to 5 pictures at once.")
 		else :
 			for i in range(nb) :
 				tag = choice(datas["waifu"])
 				if tag is "" :
-					await self.client.send("You have no waifu. Please register one with $add waifu")
+					await ctx.send("You have no waifu. Please register one with $add waifu")
 
 				em = await picturesearch(tag = tag, nsfw_only = True, embed = True, embed_color = 0xff6868)
 				em.set_author(name = m_author.name)
 				if em == -1:
-					await self.client.send("There is no picture with this tag, the tag `{}` might have changed.".format(tag))
+					await ctx.send("There is no picture with this tag, the tag `{}` might have changed.".format(tag))
 				elif em is None :
-					await self.client.send("No suitable picture found")
+					await ctx.send("No suitable picture found")
 				else :
 					try :
-						await self.client.send(embed=em)
+						await ctx.send(embed=em)
 					except Exception as e:
 						print(e)
 						print("Couldn't send picture : tag : {}\npic_source : {}\npic_link : {}\npic_url : {}\nmsg_author : {}\npic_author : {}".format(tag,pic_source,picture_link,pic_url,m_author.name,pic_author))
@@ -449,26 +449,26 @@ class Danbooru():
 		m_channel = ctx.message.channel
 		m_author = ctx.message.author
 		m_author_id = m_author.id
-		await self.ctx.channel.trigger_typing()
+		await ctx.channel.trigger_typing()
 		with open('./users/{}/userdata.json'.format(m_author_id)) as json_file:
 			datas = json.load(json_file)
 		if nb > 5 :
-			await self.client.send("You can only request up to 5 pictures at once.")
+			await ctx.send("You can only request up to 5 pictures at once.")
 		else :
 			for i in range(nb) :
 				tag = choice(datas["husbando"])
 				if tag is "" :
-					await self.client.send("You have no husbando. Please register one with $add husbando")
+					await ctx.send("You have no husbando. Please register one with $add husbando")
 
 				em = await picturesearch(tag = tag, nsfw_only = True, embed = True, embed_color = 0xab61d3)
 				em.set_author(name = m_author.name)
 				if em == -1:
-					await self.client.send("There is no picture with this tag, the tag `{}` might have changed.".format(tag))
+					await ctx.send("There is no picture with this tag, the tag `{}` might have changed.".format(tag))
 				elif em is None :
-					await self.client.send("No suitable picture found")
+					await ctx.send("No suitable picture found")
 				else :
 					try :
-						await self.client.send(embed=em)
+						await ctx.send(embed=em)
 					except Exception as e:
 						print(e)
 						print("Couldn't send picture : tag : {}\npic_source : {}\npic_link : {}\npic_url : {}\nmsg_author : {}\npic_author : {}".format(tag,pic_source,picture_link,pic_url,m_author.name,pic_author))
@@ -499,13 +499,13 @@ class Danbooru():
 			else :
 				trigger = True
 				text += "\n- For a total of {} Waifu(s)\n```".format(len(waifu_list))
-				await self.client.send(text)
+				await ctx.send(text)
 				text = "```diff\n"
 				charcount = len(text)
 
 		if trigger is False :
 			text += "\n- For a total of {} Waifu(s)\n```".format(len(waifu_list))
-			await self.client.send(text)
+			await ctx.send(text)
 
 	@commands.command(description="List your husbandos", aliases=["hl"])
 	async def husbandolist(self, ctx, mention = None):
@@ -532,13 +532,13 @@ class Danbooru():
 			else :
 				trigger = True
 				text += "\n- For a total of {} Husbando(s)\n```".format(len(waifu_list))
-				await self.client.send(text)
+				await ctx.send(text)
 				text = "```diff\n"
 				charcount = len(text)
 
 		if trigger is False :
 			text += "\n- For a total of {} Husbando(s)\n```".format(len(waifu_list))
-			await self.client.send(text)
+			await ctx.send(text)
 			
 def setup(bot):
 	bot.add_cog(Danbooru(bot))

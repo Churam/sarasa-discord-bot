@@ -16,7 +16,7 @@ from PIL import ImageFont, Image, ImageDraw
 from io import BytesIO
 import requests
 
-key=OCR_API_KEY
+key="6d3da16ddf88957"
 
 
 class ytdl_logger(object):
@@ -104,7 +104,7 @@ class Misc():
 
 	@commands.command(description="You don't really want to use it. Really. Trust me.", pass_context=True)
 	async def ome(self, ctx):
-		await self.client.send_file(ctx.message.channel, "./why/helpme.png", content="***BODY ONCE TOLD ME***")
+		await ctx.send("***BODY ONCE TOLD ME***", file=discord.File("./why/helpme.png"))
 
 
 	@commands.command(description="Format the picture with the given source.", pass_context=True, aliases=["s"])
@@ -115,14 +115,14 @@ class Misc():
 			pic_link = str(pic_link)
 
 			if not source_url.startswith("http://") and not source_url.startswith("https://"):
-				msg = await client.say("The source you provided isn't a valid URL, please make sure it starts with http or https")
+				msg = await ctx.send("The source you provided isn't a valid URL, please make sure it starts with http or https")
 				await asyncio.sleep(10)
-				await self.client.delete_message(msg)
+				await msg.delete()
 
 			elif pic_link.startswith("http://") and not pic_link.startswith("https://"): 
-				msg = await client.say("The provided direct url to the picture is not valid.")
+				msg = await ctx.send("The provided direct url to the picture is not valid.")
 				await asyncio.sleep(10)
-				await self.client.delete_message(msg)
+				await msg.delete()
 
 			else :
 				#Embed Object
@@ -131,11 +131,10 @@ class Misc():
 				source_em.add_field(name="Source", value=source_url)
 
 				#Send the Embed Object
-				await self.client.say(embed=source_em)
+				await ctx.send(embed=source_em)
 
 				#Delete the user message
-				await self.client.delete_message(ctx.message)
-				print(pic_link)
+				await ctx.message.delete()
 
 		#If no attachment is found
 		elif pic_link is None :
@@ -179,17 +178,15 @@ class Misc():
 				source_em.add_field(name="Source", value=pic_source)
 
 				#Send the Embed Object
-				await self.client.say(embed=source_em)
+				await ctx.send(embed=source_em)
 
 				#Delete the user message
-				await self.client.delete_message(ctx.message)
-				print(pic_link)
-
+				await ctx.message.delete()
 
 			else  :
 				msg = await client.say("Please attach a picture to your message.")
 				await asyncio.sleep(10)
-				await self.client.delete_message(msg)
+				await msg.delete()
 
 
 
@@ -202,13 +199,8 @@ class Misc():
 		else :
 			m_author = ctx.message.mentions[0]
 
-		await self.client.say("`{}`".format(m_author.id))
+		await ctx.send("`{}`".format(m_author.id))
 
-	@commands.command()
-	async def embedtest(self):
-		eb = discord.Embed(title="Test")
-		eb.set_image(url="https://danbooru.donmai.us/data/sample/__scathach_and_scathach_skadi_fate_grand_order_fate_series_and_persona_drawn_by_kisaragi_chiyuki__sample-6f733f70973c972cfb563692647ad970.jpg")
-		await self.client.say(embed=eb)
 
 	@commands.command(pass_context="True")
 	async def icon(self, ctx, mention = None):
@@ -218,7 +210,7 @@ class Misc():
 		else :
 			m_author = ctx.message.mentions[0]
 
-		await self.client.send_message(ctx.message.channel, embed=embedpic(pic_url=m_author.avatar_url, url=m_author.avatar_url, author=m_author.name, title=None))
+		await ctx.send(embed=embedpic(pic_url=m_author.avatar_url, url=m_author.avatar_url, author=m_author.name, title=None))
 
 
 	@commands.command(description="Duel someone", pass_context=True)
@@ -236,22 +228,22 @@ class Misc():
 
 		result = "\n{} {}\n\n\U0001F3C6 {} won. \U0001F3C6".format(duelists[1-winner], death.replace("[opponent]",duelists[winner]), duelists[winner])
 
-		await self.client.say("\U00002694 {} dueled {} ! \U00002694 \n{}".format(m_author.display_name, opponent.display_name, result) )
+		await ctx.send("\U00002694 {} dueled {} ! \U00002694 \n{}".format(m_author.display_name, opponent.display_name, result))
 
 
 	@commands.command(description="Ask something to the bot", pass_context=True, aliases=["?"])
 	async def ask(self, ctx):
 		answerlist = ["Yes", "No", "Maybe", "No way", "For sure", "Of course", "No chance", "Absolutely", "Perhaps", "Possibly", "Nope"]
-		await self.client.say(random.choice(answerlist))
+		await ctx.send(random.choice(answerlist))
 
 
 	@commands.command(description="Rate the given argument")
 	async def rate(self, *,arg : str):
 		randnumber = randrange(0,102)
 		if randnumber < 101:
-			await self.client.say("I give **{}** a rate of {}/100".format(arg,randnumber))
+			await ctx.send("I give **{}** a rate of {}/100".format(arg,randnumber))
 		elif randnumber == 101 :
-			await self.client.say("**{}** is overrated".format(arg))
+			await ctx.send("**{}** is overrated".format(arg))
 
 	@commands.command(description="Make a dice roll", pass_context = True)
 	async def roll(self,ctx, dice = 6):
@@ -259,7 +251,7 @@ class Misc():
 		if dice > 1000 :
 			pass
 		else :
-			await self.client.say("{} rolled {}".format(ctx.message.author.display_name, randnumber))
+			await ctx.send("{} rolled {}".format(ctx.message.author.display_name, randnumber))
 
 
 	@commands.command(description="Choose from a list of things")
@@ -268,19 +260,7 @@ class Misc():
 			wordlist = string.split(",")
 		else :
 			wordlist = string.split()
-		await self.client.say("I choose {}.".format(random.choice(wordlist)))
-
-	@commands.command(description="Sarasa will never give you up")
-	async def never(self):
-		wordlist =["gonna give you up", "gonna let you down", "gonna run around and desert you", "gonna make you cry", "gonna say goodbye", "never gonna tell a lie and hurt you"]
-		count = 0
-		msg = await self.client.say(wordlist[0])
-		wordlist.remove(wordlist[0])
-		for i in wordlist :
-			await asyncio.sleep(1)
-			await self.client.edit_message(msg, i)
-		await asyncio.sleep(10)
-		await self.client.delete_message(msg)
+		await ctx.send("I choose {}.".format(random.choice(wordlist)))
 
 
 	@commands.command(description="Let Sarasa inspire you.", pass_context=True, aliases=["iq", "inspirationalquote", "inspire"])
@@ -288,14 +268,14 @@ class Misc():
 		quote_request = requests.get("http://inspirobot.me/api?generate=true")
 		quote_url = quote_request.text
 		quote_em = embedpic(title=None, author=ctx.message.author.display_name, pic_url=quote_url, footer="From inspirobot.me")
-		await self.client.say(embed=quote_em)
+		await ctx.send(embed=quote_em)
 
 	@commands.command(description="Let Sarasa inspire you. Christmas version.", pass_context=True, aliases=["xq"])
 	async def xmasQuote(self, ctx):
 		quote_request = requests.get("http://inspirobot.me/api?generate=true&season=xmas")
 		quote_url = quote_request.text
 		quote_em = embedpic(title=None, author=ctx.message.author.display_name, pic_url=quote_url, footer="From inspirobot.me")
-		await self.client.say(embed=quote_em)
+		await ctx.send(embed=quote_em)
 
 	@commands.command(description="Mix two nicknames together", aliases=["ship"])
 	async def mix(self, nick1 : str, nick2 : str):
@@ -332,7 +312,7 @@ class Misc():
 		result = part1 + part2
 		result = result.lower().title()
 
-		await self.client.say(result)
+		await ctx.send(result)
 
 
 	@commands.command(description="Remix then Mix two nicknames together", aliases=["mix2"])
@@ -385,7 +365,7 @@ class Misc():
 		result = part1 + part2
 		result = result.lower().title()
 
-		await self.client.say(result)
+		await ctx.send(result)
 
 	@commands.command(description="Remix a string of text")
 	async def remix(self, *, text : str):
@@ -398,7 +378,7 @@ class Misc():
 			result += random_letter
 			letters.remove(random_letter)
 
-		await self.client.say(result.lower().title())
+		await ctx.send(result.lower().title())
 
 	#OCR
 	@commands.command(description="Run OCR on a picture to get the text written on a picture",pass_context=True, aliases=["ocr"])
@@ -409,7 +389,7 @@ class Misc():
 			request=ocr(url)
 		jsonparse = json.loads(request)
 		result = jsonparse["ParsedResults"][0]["ParsedText"]
-		await self.client.say(result)
+		await ctx.send(result)
 
 	@commands.command(description="When someone really likes something", pass_context=True)
 	async def love(self, ctx, mention, *, text : str):
@@ -438,7 +418,7 @@ class Misc():
 		canvas.paste(TextCanvas, (621,336), TextCanvas)
 
 		canvas.save("{}.jpg".format(m_author.id))
-		await self.client.send_file(ctx.message.channel,"{}.jpg".format(m_author.id))
+		await ctx.send(file=discord.File("{}.jpg".format(m_author.id)))
 		os.remove("{}.jpg".format(m_author.id))
 
 	@commands.command(description="When it's time for something", pass_context=True)
@@ -477,21 +457,21 @@ class Misc():
 		DrawText2.text((117,330), m_author.display_name, fill="black", font=font)
 
 		canvas.save("{}.jpg".format(m_author.id))
-		await self.client.send_file(ctx.message.channel,"{}.jpg".format(m_author.id))
+		await ctx.send(file = discord.File("{}.jpg".format(m_author.id)))
 		os.remove("{}.jpg".format(m_author.id))
 
 	@commands.command(description="Gives access to the NSFW channel (For GBF Garden !!!) or remove it", pass_context=True)
 	async def nsfw(self,ctx):
 		m_author = ctx.message.author
-		role = discord.utils.get(m_author.server.roles, name="NSFW")
+		role = discord.utils.get(ctx.guild.roles, name="NSFW")
 
 		if role in m_author.roles :
-			await self.client.remove_roles(m_author, role)
-			await self.client.say("Succesfully removed your NSFW role.")
+			await m_author.remove_roles(role)
+			await ctx.send("Succesfully removed your NSFW role.")
 
 		elif role not in m_author.roles :
-			await self.client.add_roles(m_author, role)
-			await self.client.say("Succesfully added NSFW to your roles.")
+			await m_author.add_roles(role)
+			await ctx.send("Succesfully added NSFW to your roles.")
 
 	@commands.command(description="Tells you when you joined", pass_context=True)
 	async def when(self,ctx):
@@ -502,7 +482,7 @@ class Misc():
 		joinmonth = jointime.month
 		joinyear = jointime.year
 
-		await self.client.say("You joined this server the {}/{}/{}".format(joinday,joinmonth,joinyear))
+		await ctx.send("You joined this server the {}/{}/{}".format(joinday,joinmonth,joinyear))
 
 	@commands.command(description="Download and convert a Youtube video to MP3", pass_context=True)
 	async def ytdl(self, ctx, url : str):
@@ -526,18 +506,18 @@ class Misc():
 			os.rename('./{}-{}.mp3'.format(video_title, video_id), '/home/akeyro/www/downloads/{}.mp3'.format(new_title))
 			filesize = os.path.getsize('/home/akeyro/www/downloads/{}.mp3'.format(new_title)) >> 20
 			if filesize > 8 :
-				msg = await self.client.say("Video successfully converted.\nDownload url is : http://akeyro.skiel.pro/downloads/{}.mp3 (File will be deleted in 5 minutes)".format(new_title))
+				msg = await ctx.send("Video successfully converted.\nDownload url is : http://akeyro.skiel.pro/downloads/{}.mp3 (File will be deleted in 5 minutes)".format(new_title))
 				await asyncio.sleep(300)
 				os.remove('/home/akeyro/net/downloads/{}.mp3'.format(new_title))
 			
 			else :
-				msg = await self.client.send_file(destination = ctx.message.channel, fp = '/home/akeyro/www/downloads/{}.mp3'.format(new_title), content = "Video successfully converted. (File will be removed in 5 minutes)")
+				msg = await ctx.send("Video successfully converted. (File will be removed in 5 minutes)" ,file = discord.File('/home/akeyro/www/downloads/{}.mp3'.format(new_title)))
 				os.remove('/home/akeyro/www/downloads/{}.mp3'.format(new_title))
 				await asyncio.sleep(300)
-			await self.client.delete_message(msg)
+			await msg.delete()
 
 		except Exception as e:
-			await self.client.say('An error occured while trying to download the video.')
+			await ctx.send('An error occured while trying to download the video.')
 			print(e)
 
 
