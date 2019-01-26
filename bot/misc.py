@@ -16,7 +16,7 @@ from PIL import ImageFont, Image, ImageDraw
 from io import BytesIO
 import requests
 
-key="6d3da16ddf88957"
+ocr_key=YOUR_KEY
 
 
 class ytdl_logger(object):
@@ -50,7 +50,7 @@ def replaceMultiple(mainString, toBeReplaces, newString):
 
 #For OCR translations
 
-def ocr(url, overlay=False, api_key=key, language='eng'):
+def ocr(url, overlay=False, api_key=ocr_key, language='eng'):
 	""" OCR.space API request with remote file.
 		Python3.5 - not tested on 2.7
 	:param url: Image url.
