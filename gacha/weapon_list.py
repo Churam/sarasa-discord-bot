@@ -1,6 +1,7 @@
 import json
 from random import randrange
 from random import choice
+import os.path
 #Dictionnary containing the SSR Weapons
 SSR_weps = {}
 SSR_weps["Dainsleif"] = "Altaïr"
@@ -89,8 +90,28 @@ SSR_weps["Heiliges Schwert"] = "Lancelot (Wind)"
 SSR_weps["Wurtzite Scythe"] = "Vaseraga (Earth)"
 SSR_weps["Gandiva"] = "Ilsa"
 SSR_weps["Tanzanite Blade"] = "Therese (SSR)"
+SSR_weps["Ruler of Fate"] = "Zooey (Gun)"
+SSR_weps["Tiamat Bolt Prime"] = "Tiamat"
+SSR_weps["Railgun"] = "Robomi"
+SSR_weps["Gigante Slicer"] = "Nicholas"
+SSR_weps["White Hawk"] = "Cucouroux"
+SSR_weps["Ruling Pen"] = "Lunalu (SSR)"
+SSR_weps["Master Key"] = "Wulf and Renie"
+SSR_weps["Cythara Anglica"] = "Selfira (SSR)"
+SSR_weps["Two-by-Four"] = "Tsubasa"
+SSR_weps["Arachne"] = "Freezie"
+SSR_weps["Full Metal Recoil"] = "Silva (Light)"
+SSR_weps["Feendrache Pennant"] = "Lancelot and Vane"
+SSR_weps["Gottfried"] = "Aglovale"
+SSR_weps["Levin Shooter"] = "Levin Sisters"
+SSR_weps["Returner Staff"] = "Yurius"
+SSR_weps["Claidheamh Soluis"] = "Charlotta (Light)"
 
- 
+#LIMITED
+
+
+
+
 SSR_summs = []
 SSR_summs.append("Athena")
 SSR_summs.append("Prometheus")
@@ -130,8 +151,12 @@ SSR_summs.append("Garula, Shining Hawk")
 SSR_summs.append("Zaoshen")
 SSR_summs.append("Ankusha")
 SSR_summs.append("Adramelech")
+SSR_summs.append("Tsukuyomi")
+SSR_summs.append("Halluel and Malluel")
 SSR_summs.append("Freyr")
-
+SSR_summs.append("Gorilla")
+SSR_summs.append("Hamsa")
+SSR_summs.append("Anat, for Love and War")
 
 SSR_summs.append("Agni")
 SSR_summs.append("Shiva")
@@ -147,17 +172,24 @@ SSR_summs.append("Hades")
 SSR_summs.append("Bahamut")
 SSR_summs.append("Europa")
 SSR_summs.append("Grimnir")
+SSR_summs.append("Uriel")
+SSR_summs.append("Raphael")
+SSR_summs.append("Michael")
 
 #LEGFEST LIMITED, COMMENT IF NO LEGFEST
 
 legfest_SSR_weps= {}
-legfest_SSR_weps["Canisius"] = "Vajra"
+#legfest_SSR_weps["Canisius"] = "Vajra"
+#legfest_SSR_weps["Dormius"] = "Andira"
+legfest_SSR_weps["Ramulus"] = "Anila"
 legfest_SSR_weps["AK-4A"] = "Eugen"
 legfest_SSR_weps["Gambanteinn"] = "Io (Grand)"
 legfest_SSR_weps["Murgleis"] = "Katalina (Grand)"
 legfest_SSR_weps["Reunion"] = "Lecia"
 legfest_SSR_weps["Benedia"] = "Rackam (Grand)"
 legfest_SSR_weps["Love Eternal"] = "Rosetta (Grand)"
+legfest_SSR_weps["Ichigo Hitofuri"] = "Cain (Grand)"
+legfest_SSR_weps["Taisai Spirit Bow"] = "Pholia"
 
 flashfest_SSR_weps = {}
 flashfest_SSR_weps["Blutgang"] = "Black Knight"
@@ -168,6 +200,8 @@ flashfest_SSR_weps["Blue Sphere"] = "Drang"
 flashfest_SSR_weps["Cute Ribbon"] = "Zooey (Summer)"
 flashfest_SSR_weps["Certificus"] = "Vira (Grand)"
 flashfest_SSR_weps["Fallen Sword"] = "Olivia"
+flashfest_SSR_weps["Mirror-Blade Shard"] = "Alexiel"
+flashfest_SSR_weps["Galilei's Insight"] = "Europa"
 
 
 # -------------------------------------- SR ---------------------------------------#
@@ -221,7 +255,7 @@ SR_chara_weps["Wind-Rhyme Staff"]="Noa"
 SR_chara_weps["Sacred Codex"]="Johann"
 SR_chara_weps["Cursed Cane"]="Will"
 SR_chara_weps["Shadow Scepter"]="Goblin Mage"
-SR_chara_weps["Dolphin"]="Cucuroux"
+SR_chara_weps["Dolphin"]="Cucouroux"
 SR_chara_weps["Fire Piece"]="Mary (SR)"
 SR_chara_weps["Colorful Crackerjack"]="Pengy"
 SR_chara_weps["Quarrel"]="Sahli Lao"
@@ -256,8 +290,18 @@ SR_chara_weps["Slingshot"] = "Sarya"
 SR_chara_weps["Unsigned Blade"] = "Mirin"
 SR_chara_weps["Staff of the Star Seeker"] = "Sophia (SR)"
 SR_chara_weps["Red-Hot Noodles"] = "Ippatsu (SR)"
-
-
+SR_chara_weps["Silver Shotel"] = "Randall (SR)"
+SR_chara_weps["Tughril"] = "Nezahualpilli (SR)"
+SR_chara_weps["Crocskin Glove"] = "Barawa (SR)"
+SR_chara_weps["Sudarshana"] = "Carmelina (SR)"
+SR_chara_weps["Humming Bard"] = "Elta (Light)" 
+SR_chara_weps["Mythril Tonfa"] = "Vanzza (SR)"
+SR_chara_weps["Epoxy Boogie Plates"] = "Cailana (SR)"
+SR_chara_weps["Macho Hunter Weapon"] = "The Lowain Bros"
+SR_chara_weps["Kilij"] = "Juri (SR)"
+SR_chara_weps["Balisarde"] = "Arthur and Mordred"
+SR_chara_weps["Time-Tested Iron"] = "Rosine (SR)"
+SR_chara_weps["Divine Spear"] = "Razia (SR)"
 
 SR_weps = []
 SR_weps.append("Fragarach")
@@ -381,6 +425,7 @@ R_chara_weps["Blast Knuckles"]="Feather (R)"
 R_chara_weps["Flame Bow"]="Flesselles"
 R_chara_weps["Bronze Bell"]="Bakura"
 R_chara_weps["Night Bell"]="Lunalu"
+R_chara_weps["Spin Blade"] = "Spinnah"
 
 R_weps = []
 R_weps.append("Anelace")
@@ -489,3 +534,12 @@ R_chara_weps_list = list(R_chara_weps.keys())
 R_weps_nb = len(R_weps)
 R_summs_nb = len(R_summs)
 
+
+#Filecheck
+# replace variable
+for y in [SSR_weps_list, SSR_summs, SR_chara_weps_list, SR_weps, SR_summs, R_chara_weps_list, R_weps, R_summs] :
+	for i in y :
+		name = i.replace(" ","_")
+		file_exists = os.path.isfile("../gacha/gacha/{}_icon.jpg".format(name))
+		if not file_exists :
+			print("{}_icon.jpg : {}".format(name,file_exists))

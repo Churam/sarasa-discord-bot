@@ -49,7 +49,7 @@ MOVE THAT TO A CONFIG FILE
 ownerid = 90878360053366784
 
 description = "Sarasa bot for Hanapara, please give me plenty of cake !"
-client = commands.Bot(command_prefix='&', description=description)
+client = commands.Bot(command_prefix='$', description=description)
 
 client.pm_help = True #Send the help message in PM
 
@@ -116,10 +116,10 @@ async def restart(ctx):
 
 @client.command(aliases=["cg"])
 async def changegame(ctx,*, text):
-    if ctx.author.id not in ownerid :
+    if ctx.author.id != ownerid :
         pass
     else :
-        await client.change_presence(game=discord.Game(name=text))
+        await client.change_presence(activity=discord.Game(name=text))
 
 @client.command()
 async def load(ctx, extension_name : str):
