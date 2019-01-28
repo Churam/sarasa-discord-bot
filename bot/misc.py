@@ -16,7 +16,7 @@ from PIL import ImageFont, Image, ImageDraw
 from io import BytesIO
 import requests
 
-ocr_key=YOUR_KEY
+ocr_key=YOUR_OCR_KEY
 
 
 class ytdl_logger(object):
@@ -102,12 +102,12 @@ class Misc():
 		self.client = bot
 
 
-	@commands.command(description="You don't really want to use it. Really. Trust me.", pass_context=True)
+	@commands.command(description="You don't really want to use it. Really. Trust me.")
 	async def ome(self, ctx):
 		await ctx.send("***BODY ONCE TOLD ME***", file=discord.File("./why/helpme.png"))
 
 
-	@commands.command(description="Format the picture with the given source.", pass_context=True, aliases=["s"])
+	@commands.command(description="Format the picture with the given source.", aliases=["s"])
 	async def source(self, ctx, source_url : str, pic_link=None):
 		m_author = ctx.message.author
 
@@ -191,7 +191,7 @@ class Misc():
 
 
 
-	@commands.command(pass_context="True")
+	@commands.command()
 	async def userid(self, ctx, mention = None):
 		if mention is None :
 			m_author = ctx.message.author
@@ -202,7 +202,7 @@ class Misc():
 		await ctx.send("`{}`".format(m_author.id))
 
 
-	@commands.command(pass_context="True")
+	@commands.command()
 	async def icon(self, ctx, mention = None):
 		if mention is None :
 			m_author = ctx.message.author
@@ -213,7 +213,7 @@ class Misc():
 		await ctx.send(embed=embedpic(pic_url=m_author.avatar_url, url=m_author.avatar_url, author=m_author.name, title=None))
 
 
-	@commands.command(description="Duel someone", pass_context=True)
+	@commands.command(description="Duel someone")
 	async def duel(self, ctx):
 		m_author = ctx.message.author
 		opponent = ctx.message.mentions[0]
@@ -231,21 +231,21 @@ class Misc():
 		await ctx.send("\U00002694 {} dueled {} ! \U00002694 \n{}".format(m_author.display_name, opponent.display_name, result))
 
 
-	@commands.command(description="Ask something to the bot", pass_context=True, aliases=["?"])
+	@commands.command(description="Ask something to the bot", aliases=["?"])
 	async def ask(self, ctx):
 		answerlist = ["Yes", "No", "Maybe", "No way", "For sure", "Of course", "No chance", "Absolutely", "Perhaps", "Possibly", "Nope"]
 		await ctx.send(random.choice(answerlist))
 
 
 	@commands.command(description="Rate the given argument")
-	async def rate(self, *,arg : str):
+	async def rate(self, ctx, *,arg : str):
 		randnumber = randrange(0,102)
 		if randnumber < 101:
 			await ctx.send("I give **{}** a rate of {}/100".format(arg,randnumber))
 		elif randnumber == 101 :
 			await ctx.send("**{}** is overrated".format(arg))
 
-	@commands.command(description="Make a dice roll", pass_context = True)
+	@commands.command(description="Make a dice roll")
 	async def roll(self,ctx, dice = 6):
 		randnumber = randrange(1, dice+1)
 		if dice > 1000 :
@@ -255,7 +255,7 @@ class Misc():
 
 
 	@commands.command(description="Choose from a list of things")
-	async def choose(self, *, string : str):
+	async def choose(self,ctx,*, string : str):
 		if "," in string :
 			wordlist = string.split(",")
 		else :
@@ -263,14 +263,14 @@ class Misc():
 		await ctx.send("I choose {}.".format(random.choice(wordlist)))
 
 
-	@commands.command(description="Let Sarasa inspire you.", pass_context=True, aliases=["iq", "inspirationalquote", "inspire"])
+	@commands.command(description="Let Sarasa inspire you.", aliases=["iq", "inspirationalquote", "inspire"])
 	async def inspirationalQuote(self, ctx):
 		quote_request = requests.get("http://inspirobot.me/api?generate=true")
 		quote_url = quote_request.text
 		quote_em = embedpic(title=None, author=ctx.message.author.display_name, pic_url=quote_url, footer="From inspirobot.me")
 		await ctx.send(embed=quote_em)
 
-	@commands.command(description="Let Sarasa inspire you. Christmas version.", pass_context=True, aliases=["xq"])
+	@commands.command(description="Let Sarasa inspire you. Christmas version.", aliases=["xq"])
 	async def xmasQuote(self, ctx):
 		quote_request = requests.get("http://inspirobot.me/api?generate=true&season=xmas")
 		quote_url = quote_request.text
@@ -278,7 +278,7 @@ class Misc():
 		await ctx.send(embed=quote_em)
 
 	@commands.command(description="Mix two nicknames together", aliases=["ship"])
-	async def mix(self, nick1 : str, nick2 : str):
+	async def mix(self, ctx, nick1 : str, nick2 : str):
 		letters1 = list(nick1)
 		del letters1[-1]
 		letters2 = list(nick2)
@@ -316,7 +316,7 @@ class Misc():
 
 
 	@commands.command(description="Remix then Mix two nicknames together", aliases=["mix2"])
-	async def remix2(self, nick1 : str, nick2 : str):
+	async def remix2(self, ctx, nick1 : str, nick2 : str):
 		letters1 = list(nick1)
 
 		result1 = []
@@ -368,7 +368,7 @@ class Misc():
 		await ctx.send(result)
 
 	@commands.command(description="Remix a string of text")
-	async def remix(self, *, text : str):
+	async def remix(self, ctx, *, text : str):
 		letters = list(text)
 		len_text = len(letters)
 		result = ""
@@ -381,17 +381,18 @@ class Misc():
 		await ctx.send(result.lower().title())
 
 	#OCR
-	@commands.command(description="Run OCR on a picture to get the text written on a picture",pass_context=True, aliases=["ocr"])
+	@commands.command(description="Run OCR on a picture to get the text written on a picture", aliases=["ocr"])
 	async def OCR(self, ctx, language="eng" , url=None):
 		if url is None :
-			request = ocr(url=ctx.message.attachments[0]["url"], language=language)
+			print(ctx.message.attachments[0].url)
+			request = ocr(url=ctx.message.attachments[0].url, language=language)
 		else :
 			request=ocr(url)
 		jsonparse = json.loads(request)
 		result = jsonparse["ParsedResults"][0]["ParsedText"]
 		await ctx.send(result)
 
-	@commands.command(description="When someone really likes something", pass_context=True)
+	@commands.command(description="When someone really likes something")
 	async def love(self, ctx, mention, *, text : str):
 		m_author = ctx.message.mentions[0]
 
@@ -421,7 +422,7 @@ class Misc():
 		await ctx.send(file=discord.File("{}.jpg".format(m_author.id)))
 		os.remove("{}.jpg".format(m_author.id))
 
-	@commands.command(description="When it's time for something", pass_context=True)
+	@commands.command(description="When it's time for something")
 	async def its(self, ctx, *, text : str):
 		m_author = ctx.message.author
 
@@ -460,8 +461,8 @@ class Misc():
 		await ctx.send(file = discord.File("{}.jpg".format(m_author.id)))
 		os.remove("{}.jpg".format(m_author.id))
 
-	@commands.command(description="Gives access to the NSFW channel (For GBF Garden !!!) or remove it", pass_context=True)
-	async def nsfw(self,ctx):
+	@commands.command(description="Gives access to the NSFW channel (For GBF Garden !!!) or remove it")
+	async def nsfw(self, ctx):
 		m_author = ctx.message.author
 		role = discord.utils.get(ctx.guild.roles, name="NSFW")
 
@@ -473,7 +474,7 @@ class Misc():
 			await m_author.add_roles(role)
 			await ctx.send("Succesfully added NSFW to your roles.")
 
-	@commands.command(description="Tells you when you joined", pass_context=True)
+	@commands.command(description="Tells you when you joined")
 	async def when(self,ctx):
 		m_author = ctx.message.author
 		jointime = m_author.joined_at
@@ -484,7 +485,7 @@ class Misc():
 
 		await ctx.send("You joined this server the {}/{}/{}".format(joinday,joinmonth,joinyear))
 
-	@commands.command(description="Download and convert a Youtube video to MP3", pass_context=True)
+	@commands.command(description="Download and convert a Youtube video to MP3")
 	async def ytdl(self, ctx, url : str):
 		ydl_opts = {
 			'format': 'bestaudio/best',

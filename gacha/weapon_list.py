@@ -540,6 +540,7 @@ R_summs_nb = len(R_summs)
 for y in [SSR_weps_list, SSR_summs, SR_chara_weps_list, SR_weps, SR_summs, R_chara_weps_list, R_weps, R_summs] :
 	for i in y :
 		name = i.replace(" ","_")
+		print(name)
 		file_exists = os.path.isfile("../gacha/gacha/{}_icon.jpg".format(name))
 		if not file_exists :
 			print("{}_icon.jpg : {}".format(name,file_exists))
