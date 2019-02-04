@@ -80,9 +80,8 @@ def old_adduser(userid, username):
             json.dump(usrdata, x, indent=2, ensure_ascii=False)
 '''
 
-async def check_user(pk, col_name, table = "main"):
-    infos = [col_name, table, int(pk)]
-    curs.execute("SELECT (?) FROM (?) WHERE uid = (?)", infos)
+async def check_user(uid):
+    curs.execute("SELECT uid FROM main WHERE uid = (?)", (uid,))
     exists = curs.fetchone()
     if exists :
         return False
