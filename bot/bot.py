@@ -91,14 +91,14 @@ async def check_user(pk, col_name, table = "main"):
 
 async def adduser(userid) :
     if await check_user(userid, 'uid') :
-        title =
-        about_me =
-        money =
-        nickname =
+        title = ""
+        about_me = ""
+        money = 0
+        gbf_name = ""
         profile_mode = "still"
         waifu = []
         husbando = []
-        datas = [userid, title, about_me, money, nickname, profile_mode, json.dumps(userdata['waifu']), json.dumps(userdata['husbando']), None, None]
+        datas = [userid, title, about_me, money, gbf_name, profile_mode, json.dumps(userdata['waifu']), json.dumps(userdata['husbando']), None, None]
         curs.execute('INSERT INTO main VALUES (?,?,?,?,?,?,?,?,?,?)', datas)
         db.commit()
     else :
