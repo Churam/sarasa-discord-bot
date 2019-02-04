@@ -21,6 +21,7 @@ import textwrap
 from io import BytesIO
 from pathlib import Path
 from math import ceil
+import sqlite3
 
 #enable the logger
 logger = logging.getLogger('discord')
@@ -53,8 +54,13 @@ client = commands.Bot(command_prefix='$', description=description)
 
 client.pm_help = True #Send the help message in PM
 
-    
-def adduser(userid, username):
+   
+#db connection
+dbcon = sqlite3.connect("./database/sarasa_db.sqlite3")
+curs = dbcon.cursor()
+
+'''
+def old_adduser(userid, username):
     if not os.path.exists("./users/{}/".format(userid)) :
         os.makedirs("./users/{}/".format(userid))
         with open('./users/{}/userdata.json'.format(userid), 'xt', encoding="UTF-8") as f:
@@ -72,6 +78,31 @@ def adduser(userid, username):
             usrdata["husbando"] = []
             usrdata["spark"] = {"crystals" : 0, "tickets" : 0, "10tickets" : 0}
             json.dump(usrdata, x, indent=2, ensure_ascii=False)
+'''
+
+async def check_user(pk, col_name, table = "main"):
+    infos = [col_name, table, int(pk)]
+    curs.execute("SELECT (?) FROM (?) WHERE uid = (?)", infos)
+    exists = curs.fetch_all()
+    if exists :
+        return False
+    else :
+        return True
+
+async def adduser(userid) :
+    if await check_user(userid, 'uid') :
+        title =
+        about_me =
+        money =
+        nickname =
+        profile_mode = "still"
+        waifu = []
+        husbando = []
+        datas = [userid, title, about_me, money, nickname, profile_mode, json.dumps(userdata['waifu']), json.dumps(userdata['husbando']), None, None]
+        curs.execute('INSERT INTO main VALUES (?,?,?,?,?,?,?,?,?,?)', datas)
+        db.commit()
+    else :
+        pass
 
 def usrdata(userid):
     return "./users/{}/userdata.json".format(userid)
@@ -84,11 +115,9 @@ async def on_ready():
     print(client.user.id)
     print('------')
 
-
-
 @client.event
 async def on_message(message):
-    adduser(message.author.id, message.author.name) #Add the user if he's not registered
+    await adduser(message.author.id) #Add the user if he's not registered
     #if "loli" in message.content.lower() :
     #			await client.add_reaction(message, "\U0001F693")
     await client.process_commands(message) #Keep on_message from blocking the function calls

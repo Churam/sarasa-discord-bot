@@ -13,17 +13,9 @@ from datetime import datetime
 import asyncio
 import sqlite3
 
-
 #db connection
 dbcon = sqlite3.connect("./database/sarasa_db.sqlite3")
-
 curs = dbcon.cursor()
-
-async def search_userdata(pk, col_name, table = "main"):
-	infos = [col_name, table, int(pk)]
-	res = curs.execute("SELECT (?) FROM (?) WHERE uid = (?)", infos)
-	print(res)
-
 
 #Server id for the Contributioncheck command
 gw_server_id = "246519048559394817"
