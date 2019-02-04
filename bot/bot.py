@@ -41,14 +41,14 @@ startup_extensions = ["danbooru", "misc"]
 #Load the Discord API Key
 with open('api.json') as api_file:    
     api_key = json.load(api_file)
-discord_api = api_key["API"][0]["discord"]
+discord_api = api_key["API"]["discord"]
 
 '''
 MOVE THAT TO A CONFIG FILE
 '''
 ownerid = 90878360053366784
 
-description = "Sarasa bot for Hanapara, please give me plenty of cake !"
+description = "Zooey discord bot, breaker of Balance"
 client = commands.Bot(command_prefix='$', description=description)
 
 client.pm_help = True #Send the help message in PM
@@ -83,6 +83,7 @@ async def on_ready():
     print(client.user.name)
     print(client.user.id)
     print('------')
+    await client.change_presence(activity=discord.Game(name="Lite Mode"))
 
 
 
@@ -120,7 +121,6 @@ async def changegame(ctx,*, text):
         pass
     else :
         await client.change_presence(activity=discord.Game(name=text))
-
 @client.command()
 async def load(ctx, extension_name : str):
     """Loads an extension."""
