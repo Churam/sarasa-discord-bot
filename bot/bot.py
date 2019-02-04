@@ -81,8 +81,9 @@ def old_adduser(userid, username):
 '''
 
 async def check_user(pk, col_name, table = "main"):
-    curs.execute("SELECT (?) FROM (?) WHERE uid = (?)", (col_name, table, int(pk)))
-    exists = curs.fetchall()
+    infos = [col_name, table, int(pk)]
+    curs.execute("SELECT (?) FROM (?) WHERE uid = (?)", infos)
+    exists = curs.fetchone()
     if exists :
         return False
     else :
