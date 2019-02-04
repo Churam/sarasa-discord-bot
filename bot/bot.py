@@ -89,7 +89,7 @@ async def check_user(uid):
         return True
 
 async def adduser(userid) :
-    if await check_user(userid, 'uid') :
+    if await check_user(userid) :
         title = ""
         about_me = ""
         money = 0
