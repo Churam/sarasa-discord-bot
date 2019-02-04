@@ -56,7 +56,7 @@ client.pm_help = True #Send the help message in PM
 
    
 #db connection
-dbcon = sqlite3.connect("./database/sarasa_db.sqlite3")
+db = sqlite3.connect("./database/sarasa_db.sqlite3")
 curs = dbcon.cursor()
 
 '''
