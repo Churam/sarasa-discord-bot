@@ -97,7 +97,7 @@ async def adduser(userid) :
         profile_mode = "still"
         waifu = []
         husbando = []
-        datas = [userid, title, about_me, money, gbf_name, profile_mode, json.dumps(userdata['waifu']), json.dumps(userdata['husbando']), None, None]
+        datas = [userid, title, about_me, money, gbf_name, profile_mode, json.dumps(waifu), json.dumps(waifu), None, None]
         curs.execute('INSERT INTO main VALUES (?,?,?,?,?,?,?,?,?,?)', datas)
         db.commit()
     else :
