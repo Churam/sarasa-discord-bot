@@ -124,6 +124,8 @@ async def changegame(ctx,*, text):
 @client.command()
 async def load(ctx, extension_name : str):
     """Loads an extension."""
+    if ctx.author.id != ownerid :
+        return
     try:
         client.load_extension(extension_name)
     except (AttributeError, ImportError) as e:
@@ -134,6 +136,8 @@ async def load(ctx, extension_name : str):
 @client.command()
 async def unload(ctx, extension_name : str):
     """Unloads an extension."""
+    if ctx.author.id != ownerid :
+        return
     client.unload_extension(extension_name)
     await ctx.send("{} unloaded.".format(extension_name))
 
@@ -141,6 +145,8 @@ async def unload(ctx, extension_name : str):
 @client.command()
 async def reload(ctx, extension_name : str):
     """Loads an extension."""
+    if ctx.author.id != ownerid :
+        return
     client.unload_extension(extension_name)
     try:
         client.load_extension(extension_name)
