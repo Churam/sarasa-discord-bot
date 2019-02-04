@@ -57,7 +57,7 @@ client.pm_help = True #Send the help message in PM
    
 #db connection
 db = sqlite3.connect("./database/sarasa_db.sqlite3")
-curs = dbcon.cursor()
+curs = db.cursor()
 
 '''
 def old_adduser(userid, username):
