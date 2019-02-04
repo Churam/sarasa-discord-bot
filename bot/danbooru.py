@@ -271,7 +271,7 @@ class Danbooru():
 		if ctx.invoked_subcommand is None:
 			await ctx.send("Available subcommands : `waifu` `husbando`")
 
-	@add.command(pass_context=True, name="waifu")
+	@add.command(pass_context=True, name="waifu", enabled = False)
 	async def _waifu(self, ctx, *, waifuname : str):
 		m_author = ctx.author
 		m_author_id = ctx.author.id
@@ -298,7 +298,7 @@ class Danbooru():
 					datas["waifu"].append(waifuname_format)
 					json.dump(datas, json_file, indent=2)
 
-	@add.command(pass_context=True, name="husbando")
+	@add.command(pass_context=True, name="husbando", enabled = False)
 	async def _husbando(self, ctx, *, husbandoname : str):
 		m_author = ctx.message.author
 		m_author_id = ctx.message.author.id
@@ -330,7 +330,7 @@ class Danbooru():
 		if ctx.invoked_subcommand is None:
 			await ctx.send("Available subcommands : `waifu` `husbando`")
 
-	@remove.command(name="waifu")
+	@remove.command(name="waifu", enabled = False)
 	async def remwaifu(self, ctx,* , waifuname : str):
 		m_author = ctx.message.author
 		m_author_id = m_author.id
@@ -347,7 +347,7 @@ class Danbooru():
 				json.dump(datas, json_file, indent=2)
 			await ctx.send("Successfully removed **{}** from your Waifu list.".format(waifuname_format))
 
-	@remove.command(name="husbando")
+	@remove.command(name="husbando", enabled = False)
 	async def remhusbando(self, ctx,* , husbandoname : str):
 		m_author = ctx.message.author
 		m_author_id = m_author.id
@@ -364,7 +364,7 @@ class Danbooru():
 				json.dump(datas, json_file, indent=2)
 			await ctx.send("Successfully removed **{}** from your Husbando list.".format(husbandoname_format))
 
-	@commands.command(description="Get a picture of one your waifu", aliases=["w"])
+	@commands.command(description="Get a picture of one your waifu", aliases=["w"], enabled = False)
 	async def waifu(self, ctx, nb=1):
 		m_channel = ctx.message.channel
 		m_author = ctx.message.author
@@ -389,7 +389,7 @@ class Danbooru():
 				else :
 					await ctx.send(embed=em)
 
-	@commands.command(description="Get a picture of one of your husbando", aliases=["h"])
+	@commands.command(description="Get a picture of one of your husbando", aliases=["h"], enabled = False)
 	async def husbando(self, ctx, nb=1):
 		m_channel = ctx.message.channel
 		m_author = ctx.message.author
@@ -414,7 +414,7 @@ class Danbooru():
 				else :
 					await ctx.send(embed=em)
 
-	@commands.command(description="Get a lewd picture of one of your waifu", aliases=["lw"])
+	@commands.command(description="Get a lewd picture of one of your waifu", aliases=["lw"], enabled = False)
 	async def lewdwaifu(self, ctx, nb=1):
 		m_channel = ctx.channel
 		m_author = ctx.author
@@ -444,7 +444,7 @@ class Danbooru():
 						print("Couldn't send picture : tag : {}\npic_source : {}\npic_link : {}\npic_url : {}\nmsg_author : {}\npic_author : {}".format(tag,pic_source,picture_link,pic_url,m_author.name,pic_author))
 
 
-	@commands.command(description="Get a lewd picture of one of your husbando", aliases=["lh"])
+	@commands.command(description="Get a lewd picture of one of your husbando", aliases=["lh"], enabled = False)
 	async def lewdhusbando(self, ctx, nb=1):
 		m_channel = ctx.message.channel
 		m_author = ctx.message.author
@@ -474,7 +474,7 @@ class Danbooru():
 						print("Couldn't send picture : tag : {}\npic_source : {}\npic_link : {}\npic_url : {}\nmsg_author : {}\npic_author : {}".format(tag,pic_source,picture_link,pic_url,m_author.name,pic_author))
 
 
-	@commands.command(description="List your waifus", aliases=["wl"])
+	@commands.command(description="List your waifus", aliases=["wl"], enabled = False)
 	async def waifulist(self, ctx, mention = None):
 		if mention is None :
 			m_author = ctx.message.author
@@ -507,7 +507,7 @@ class Danbooru():
 			text += "\n- For a total of {} Waifu(s)\n```".format(len(waifu_list))
 			await ctx.send(text)
 
-	@commands.command(description="List your husbandos", aliases=["hl"])
+	@commands.command(description="List your husbandos", aliases=["hl"], enabled = False)
 	async def husbandolist(self, ctx, mention = None):
 		if mention is None :
 			m_author = ctx.message.author

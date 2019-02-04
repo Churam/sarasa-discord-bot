@@ -260,7 +260,10 @@ class Misc():
 			wordlist = string.split(",")
 		else :
 			wordlist = string.split()
-		await ctx.send("I choose {}.".format(random.choice(wordlist)))
+		choice = random.choice(wordlist)
+		while choice.startswith(" ") :
+			choice = choice[1:]
+		await ctx.send("I choose {}.".format(choice))
 
 
 	@commands.command(description="Let Sarasa inspire you.", aliases=["iq", "inspirationalquote", "inspire"])
@@ -461,20 +464,7 @@ class Misc():
 		await ctx.send(file = discord.File("{}.jpg".format(m_author.id)))
 		os.remove("{}.jpg".format(m_author.id))
 
-	@commands.command(description="Gives access to the NSFW channel (For GBF Garden !!!) or remove it")
-	async def nsfw(self, ctx):
-		m_author = ctx.message.author
-		role = discord.utils.get(ctx.guild.roles, name="NSFW")
-
-		if role in m_author.roles :
-			await m_author.remove_roles(role)
-			await ctx.send("Succesfully removed your NSFW role.")
-
-		elif role not in m_author.roles :
-			await m_author.add_roles(role)
-			await ctx.send("Succesfully added NSFW to your roles.")
-
-	@commands.command(description="Tells you when you joined")
+	@commands.command(description="Tells you when you joined a server")
 	async def when(self,ctx):
 		m_author = ctx.message.author
 		jointime = m_author.joined_at
@@ -484,43 +474,6 @@ class Misc():
 		joinyear = jointime.year
 
 		await ctx.send("You joined this server the {}/{}/{}".format(joinday,joinmonth,joinyear))
-
-	@commands.command(description="Download and convert a Youtube video to MP3")
-	async def ytdl(self, ctx, url : str):
-		ydl_opts = {
-			'format': 'bestaudio/best',
-			'postprocessors': [{
-				'key': 'FFmpegExtractAudio',
-				'preferredcodec': 'mp3',
-				'preferredquality': '192',
-			}],
-			'logger': ytdl_logger(),
-			'progress_hooks': [ytdl_hook]
-		}
-		try :
-			with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-				info_dict = ydl.extract_info(url, download=True)
-				video_title = info_dict.get('title', None).replace('/', '_')
-				video_id = info_dict.get('id', None)
-				new_title = replaceMultiple(video_title, [' ', '/', '&'], '_')
-
-			os.rename('./{}-{}.mp3'.format(video_title, video_id), '/home/akeyro/www/downloads/{}.mp3'.format(new_title))
-			filesize = os.path.getsize('/home/akeyro/www/downloads/{}.mp3'.format(new_title)) >> 20
-			if filesize > 8 :
-				msg = await ctx.send("Video successfully converted.\nDownload url is : http://akeyro.skiel.pro/downloads/{}.mp3 (File will be deleted in 5 minutes)".format(new_title))
-				await asyncio.sleep(300)
-				os.remove('/home/akeyro/net/downloads/{}.mp3'.format(new_title))
-			
-			else :
-				msg = await ctx.send("Video successfully converted. (File will be removed in 5 minutes)" ,file = discord.File('/home/akeyro/www/downloads/{}.mp3'.format(new_title)))
-				os.remove('/home/akeyro/www/downloads/{}.mp3'.format(new_title))
-				await asyncio.sleep(300)
-			await msg.delete()
-
-		except Exception as e:
-			await ctx.send('An error occured while trying to download the video.')
-			print(e)
-
 
 def setup(bot):
 	bot.add_cog(Misc(bot))
