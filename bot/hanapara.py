@@ -18,7 +18,10 @@ db = sqlite3.connect("./database/sarasa_db.sqlite3")
 curs = db.cursor()
 
 async def check_user(uid, table = "main"):
-    curs.execute("SELECT uid FROM (?) WHERE uid = (?)", (table, uid))
+    if table == "main" :
+        curs.execute("SELECT uid FROM main WHERE uid = (?)", (uid,))
+    elif table == "spark" :
+        curs.execute("SELECT uid FROM spark WHERE uid = (?)", (uid,))
     exists = curs.fetchone()
     if exists :
         return True
@@ -46,14 +49,14 @@ async def addspark(userid, crystals = 0, tix = 0, ten_tix = 0):
 		db.commit()
 
 async def updatespark(userid, crystals = 0, tix = 0, ten_tix = 0):
-	if check_user(userid, "spark") :
+	if await check_user(userid, "spark") :
 		curs.execute("UPDATE spark SET crystal = (?), ticket = (?), ten_ticket = (?) WHERE uid = (?)", (crystals, tix, ten_tix, userid))
 		db.commit()
 	else :
-		addspark(userid, crystals, tix, ten_tix)
+		await addspark(userid, crystals, tix, ten_tix)
 
 async def getspark(userid) :
-	addspark(userid, 0, 0, 0)
+	await addspark(userid, 0, 0, 0)
 	curs.execute("SELECT crystal, ticket, ten_ticket FROM spark WHERE uid = (?)", (userid,))
 	spark = curs.fetchall()
 	return spark
@@ -609,7 +612,7 @@ class Hanapara():
 		m_author = ctx.message.author
 		m_author_id = m_author.id
 		if ctx.invoked_subcommand is None :
-			print(getspark(ctx.author.id))
+			print(await getspark(ctx.author.id))
 			#total_draws = int((total_crystals/300) + total_tickets + (total_10tickets*10))
 			#await self.client.say("You have {} crystals, {} draw ticket(s) and {} 10-part draw ticket(s) for a total of {} draws.".format(total_crystals, total_tickets, total_10tickets, total_draws))
 

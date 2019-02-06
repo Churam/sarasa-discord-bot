@@ -37,7 +37,7 @@ Commented until each modules are rewritten for discordpy rewrite
 #Extensions to load when starting the bot
 #startup_extensions = ["gacha", "reddit", "danbooru", "misc", "hanapara", "goal", "wiki"] 
 
-startup_extensions = ["danbooru", "misc"]
+startup_extensions = ["danbooru", "misc", "hanapara"]
 
 #Load the Discord API Key
 with open('api.json') as api_file:    
@@ -81,8 +81,8 @@ def old_adduser(userid, username):
 '''
 
 async def check_user(uid, table = "main"):
-    curs.execute("SELECT uid FROM (?) WHERE uid = (?)", (table, uid))
-    exists = curs.fetchone()
+    curs.execute("SELECT uid FROM main WHERE uid = (?)", (uid,))
+    exists = curs.fetchall()
     if exists :
         return True
     else :
