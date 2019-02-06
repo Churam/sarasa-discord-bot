@@ -1,6 +1,7 @@
 {
- "API":[
-         {"discord":DISCORD_API_KEY},
-         {"danbooru":DANBOORU_API_KEY}
-        ]
+ "API":
+         {"discord":DISCORD_API_KEY,
+         "danbooru":DANBOORU_API_KEY,
+	 "ocr":YOUR_OCR_SPACE_API_KEY}
+        
 }
