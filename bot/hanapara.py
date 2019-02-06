@@ -612,9 +612,12 @@ class Hanapara():
 		m_author = ctx.message.author
 		m_author_id = m_author.id
 		if ctx.invoked_subcommand is None :
-			print(await getspark(ctx.author.id))
-			#total_draws = int((total_crystals/300) + total_tickets + (total_10tickets*10))
-			#await self.client.say("You have {} crystals, {} draw ticket(s) and {} 10-part draw ticket(s) for a total of {} draws.".format(total_crystals, total_tickets, total_10tickets, total_draws))
+			spark = await getspark(ctx.author.id)
+			total_crystals = spark[0][0]
+			total_tickets = spark[0][1]
+			total_10tickets = spark[0][2]
+			total_draws = int((total_crystals/300) + total_tickets + (total_10tickets*10))
+			await ctx.send("You have {} crystals, {} draw ticket(s) and {} 10-part draw ticket(s) for a total of {} draws.".format(total_crystals, total_tickets, total_10tickets, total_draws))
 
 
 	@spark.command(name="add", brief="- Add a certain amount of a given element.", help="Add a certain amount of a given element. \nAvailable elements :\n - Crystals : crystal, crystals \n - Draw tickets : ticket, tickets, tix \n - 10-part draw tickets : 10ticket, 10tickets, 10tix")
@@ -641,13 +644,13 @@ class Hanapara():
 				json.dump(spark_datas, fp, indent=2)
 
 		else :
-			await self.client.say("I don't know what you're trying to do.")
+			await self.client.send("I don't know what you're trying to do.")
 
 		total_crystals = spark_datas["spark"]["crystals"]
 		total_tickets = spark_datas["spark"]["tickets"]
 		total_10tickets = spark_datas["spark"]["10tickets"]
 		total_draws = int((total_crystals/300) + total_tickets + (total_10tickets*10))
-		await self.client.say("You now have {} crystals, {} draw ticket(s) and {} 10-part draw ticket(s) for a total of {} draws.".format(total_crystals, total_tickets, total_10tickets, total_draws))
+		await self.client.send("You now have {} crystals, {} draw ticket(s) and {} 10-part draw ticket(s) for a total of {} draws.".format(total_crystals, total_tickets, total_10tickets, total_draws))
 
 
 	@spark.command(name="set", brief="- Set a certain amount of a given element.", help="Set a certain amount of a given element. \nAvailable elements :\n - Crystals : crystal, crystals \n - Draw tickets : ticket, tickets, tix \n - 10-part draw tickets : 10ticket, 10tickets, 10tix")
