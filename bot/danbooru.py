@@ -11,7 +11,7 @@ with open('api.json') as api_file:
 	api_key = json.load(api_file)
 
 #Load the API Key and the Danbooru module
-danbooru_api = api_key["API"][1]["danbooru"]
+danbooru_api = api_key["API"]["danbooru"]
 picbot = Danbooru('danbooru', username='Akeyro', api_key=danbooru_api)
 
 #Danbooru tags to blacklist for the NSFW picture search commands

@@ -42,7 +42,7 @@ startup_extensions = ["danbooru", "misc"]
 #Load the Discord API Key
 with open('api.json') as api_file:    
     api_key = json.load(api_file)
-discord_api = api_key["API"][0]["discord"]
+discord_api = api_key["API"]["discord"]
 
 '''
 MOVE THAT TO A CONFIG FILE
@@ -80,8 +80,8 @@ def old_adduser(userid, username):
             json.dump(usrdata, x, indent=2, ensure_ascii=False)
 '''
 
-async def check_user(uid):
-    curs.execute("SELECT uid FROM main WHERE uid = (?)", (uid,))
+async def check_user(uid, table = "main"):
+    curs.execute("SELECT uid FROM (?) WHERE uid = (?)", (uid, table))
     exists = curs.fetchone()
     if exists :
         return False
@@ -102,9 +102,6 @@ async def adduser(userid) :
         db.commit()
     else :
         pass
-
-def usrdata(userid):
-    return "./users/{}/userdata.json".format(userid)
 
 @client.event
 async def on_ready():

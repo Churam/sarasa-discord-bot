@@ -16,7 +16,9 @@ from PIL import ImageFont, Image, ImageDraw
 from io import BytesIO
 import requests
 
-ocr_key=YOUR_OCR_KEY
+with open("api.json") as fp :
+	api_key = json.load(fp)
+	ocr_key = api_key["API"]["ocr"]
 
 
 class ytdl_logger(object):

@@ -14,8 +14,56 @@ import asyncio
 import sqlite3
 
 #db connection
-dbcon = sqlite3.connect("./database/sarasa_db.sqlite3")
-curs = dbcon.cursor()
+db = sqlite3.connect("./database/sarasa_db.sqlite3")
+curs = db.cursor()
+
+async def check_user(uid, table = "main"):
+    curs.execute("SELECT uid FROM (?) WHERE uid = (?)", (uid,table))
+    exists = curs.fetchone()
+    if exists :
+        return True
+    else :
+        return False
+
+async def adduser(userid) :
+    if not await check_user(userid) :
+        title = ""
+        about_me = ""
+        money = 0
+        gbf_name = ""
+        profile_mode = "still"
+        waifu = []
+        husbando = []
+        datas = [userid, title, about_me, money, gbf_name, profile_mode, json.dumps(waifu), json.dumps(waifu), None, None]
+        curs.execute('INSERT INTO main VALUES (?,?,?,?,?,?,?,?,?,?)', datas)
+        db.commit()
+    else :
+        pass
+
+async def addspark(userid, crystals = 0, tix = 0, ten_tix = 0):
+	if not await check_user(userid, "spark") :
+		curs.execute('INSERT INTO spark VALUES (?,?,?,?)', (userid, crystals, tix, ten_tix))
+		db.commit()
+
+async def updatespark(userid, crystals = 0, tix = 0, ten_tix = 0):
+	if check_user(userid, "spark") :
+		curs.execute("UPDATE spark SET crystal = (?), ticket = (?), ten_ticket = (?) WHERE uid = (?)", (crystals, tix, ten_tix, userid))
+		db.commit()
+	else :
+		addspark(userid, crystals, tix, ten_tix)
+
+async def getspark(userid) :
+	addspark(userid, 0, 0, 0)
+	curs.execute("SELECT crystal, ticket, ten_ticket FROM spark WHERE uid = (?)", (userid,))
+	spark = curs.fetchall()
+	return spark
+
+async def search_userdata(pk, col_name, table = "main"):
+	infos = [col_name, table, int(pk)]
+	curs.execute("SELECT (?) FROM (?) WHERE uid = (?)", infos)
+	res = curs.fetchone()
+	return res
+	
 
 #Server id for the Contributioncheck command
 gw_server_id = "246519048559394817"
@@ -238,7 +286,7 @@ class Hanapara():
 		self.client = bot
 
 
-	@commands.command(description="Show your profile", aliases=["p"], pass_context=True)
+	@commands.command(description="Show your profile", aliases=["p"])
 	async def profile(self, ctx, mention = None):
 
 		if mention is None :
@@ -435,10 +483,10 @@ class Hanapara():
 			os.remove("{}.gif".format(m_author.id))
 
 	@commands.group(description="Set of command to customize one's profile.",name="set")
-	async def _set(self):
+	async def _set(self, ctx):
 		pass
 
-	@_set.command(description="Set a background (Will be resized to a height of 600px )\nAdd reset or default to reset your background", pass_context=True, name="background", aliases=["bg"])
+	@_set.command(description="Set a background (Will be resized to a height of 600px )\nAdd reset or default to reset your background", name="background", aliases=["bg"])
 	async def _background(self, ctx, link = None):
 		m_author = ctx.message.author
 		m_channel = ctx.message.channel
@@ -494,7 +542,7 @@ class Hanapara():
 
 			
 
-	@_set.command(description="Change your profile message", aliases=["am","about"], pass_context=True)
+	@_set.command(description="Change your profile message", aliases=["am","about"])
 	async def _aboutme(self, ctx, *, msg):
 		m_author = ctx.message.author
 		m_channel = ctx.message.channel
@@ -521,7 +569,7 @@ class Hanapara():
 			await self.client.say(msg)
 
 		
-	@_set.command(description="Change someone's title (Admin only)", pass_context=True, name="title")
+	@_set.command(description="Change someone's title (Admin only)", name="title")
 	async def _title(self, ctx, mention, *, msg):
 		m_author = ctx.message.author
 		mention = ctx.message.mentions[0]
@@ -537,7 +585,7 @@ class Hanapara():
 			await self.client.say("\U0000274E You don't have the right to do that.")
 
 
-	@_set.command(description="Change your profile's background to be still or animated", pass_context=True, name="mode")
+	@_set.command(description="Change your profile's background to be still or animated", name="mode")
 	async def _mode(self, ctx, mode):
 		m_author = ctx.message.author
 		with open('./users/{}/userdata.json'.format(m_author.id)) as fp:
@@ -556,22 +604,17 @@ class Hanapara():
 			await self.client.say("\U00002611 Your profile mode has been set to **still**.")
 
 
-	@commands.group(description="Stay updated about the progress of your spark !", pass_context=True)
+	@commands.group(description="Stay updated about the progress of your spark !")
 	async def spark(self, ctx):
 		m_author = ctx.message.author
 		m_author_id = m_author.id
-		with open('./users/{}/userdata.json'.format(m_author_id)) as fp:
-			spark_datas = json.load(fp)
-			spark_datas = spark_datas["spark"]
 		if ctx.invoked_subcommand is None :
-			total_crystals = spark_datas["crystals"]
-			total_tickets = spark_datas["tickets"]
-			total_10tickets = spark_datas["10tickets"]
-			total_draws = int((total_crystals/300) + total_tickets + (total_10tickets*10))
-			await self.client.say("You have {} crystals, {} draw ticket(s) and {} 10-part draw ticket(s) for a total of {} draws.".format(total_crystals, total_tickets, total_10tickets, total_draws))
+			print(getspark(ctx.author.id))
+			#total_draws = int((total_crystals/300) + total_tickets + (total_10tickets*10))
+			#await self.client.say("You have {} crystals, {} draw ticket(s) and {} 10-part draw ticket(s) for a total of {} draws.".format(total_crystals, total_tickets, total_10tickets, total_draws))
 
 
-	@spark.command(pass_context=True, name="add", brief="- Add a certain amount of a given element.", help="Add a certain amount of a given element. \nAvailable elements :\n - Crystals : crystal, crystals \n - Draw tickets : ticket, tickets, tix \n - 10-part draw tickets : 10ticket, 10tickets, 10tix")
+	@spark.command(name="add", brief="- Add a certain amount of a given element.", help="Add a certain amount of a given element. \nAvailable elements :\n - Crystals : crystal, crystals \n - Draw tickets : ticket, tickets, tix \n - 10-part draw tickets : 10ticket, 10tickets, 10tix")
 	async def spark_add(self, ctx, element : str, amount : int):
 		m_author = ctx.message.author
 		m_author_id = m_author.id
@@ -604,7 +647,7 @@ class Hanapara():
 		await self.client.say("You now have {} crystals, {} draw ticket(s) and {} 10-part draw ticket(s) for a total of {} draws.".format(total_crystals, total_tickets, total_10tickets, total_draws))
 
 
-	@spark.command(pass_context=True, name="set", brief="- Set a certain amount of a given element.", help="Set a certain amount of a given element. \nAvailable elements :\n - Crystals : crystal, crystals \n - Draw tickets : ticket, tickets, tix \n - 10-part draw tickets : 10ticket, 10tickets, 10tix")
+	@spark.command(name="set", brief="- Set a certain amount of a given element.", help="Set a certain amount of a given element. \nAvailable elements :\n - Crystals : crystal, crystals \n - Draw tickets : ticket, tickets, tix \n - 10-part draw tickets : 10ticket, 10tickets, 10tix")
 	async def spark_set(self, ctx, element : str, amount : int):
 		m_author = ctx.message.author
 		m_author_id = m_author.id
@@ -637,7 +680,7 @@ class Hanapara():
 		await self.client.say("You now have {} crystals, {} draw ticket(s) and {} 10-part draw ticket(s) for a total of {} draws.".format(total_crystals, total_tickets, total_10tickets, total_draws))
 
 
-	@spark.command(pass_context=True, name="reset", help="- Resets your spark completely.")
+	@spark.command(name="reset", help="- Resets your spark completely.")
 	async def spark_reset(self,ctx):
 		m_author = ctx.message.author
 		m_author_id = m_author.id
@@ -653,11 +696,11 @@ class Hanapara():
 
 
 	@commands.group(description="Currency related commands.", aliases=["$"])
-	async def money(self):
+	async def money(self, ctx):
 		pass
 
 
-	@money.command(description="! Admin Only ! Add flowers to someone's account.", name="add", pass_context=True)
+	@money.command(description="! Admin Only ! Add flowers to someone's account.", name="add")
 	async def _add(self, ctx, mention, amount : int ):
 		
 		m_author = ctx.message.author
@@ -679,7 +722,7 @@ class Hanapara():
 			await self.client.say("\U0000274E | You don't have the right to do that.")
 
 
-	@money.command(description="Transfer flowers to someone.", name="give", pass_context=True)
+	@money.command(description="Transfer flowers to someone.", name="give")
 	async def _give(self, ctx, mention, amount : int ):
 		
 		m_author = ctx.message.author
@@ -704,7 +747,7 @@ class Hanapara():
 			await self.client.say("\U0001F4B5 | Successfully transferred {}\U0001F4AE to **{}**".format(amount,mention.mention))
 
 
-	@commands.command(pass_context=True, description="Set or change your registered GBF nickname.", aliases=["pn"])
+	@commands.command(description="Set or change your registered GBF nickname.", aliases=["pn"])
 	async def playername(self, ctx, *, nickname=None) :
 		nickname = str(nickname)
 		m_author = ctx.message.author
@@ -724,7 +767,7 @@ class Hanapara():
 			await self.client.say("Your registered player name was set to **{}**".format(nickname))
 
 
-	@commands.command(pass_context=True, description="Check someone's GBF nickname.", aliases=["cn"])
+	@commands.command(description="Check someone's GBF nickname.", aliases=["cn"])
 	async def checkname(self, ctx):
 		mention_user = ctx.message.mentions[0]
 		with open(usrdata(mention_user.id)) as fp :
@@ -735,7 +778,7 @@ class Hanapara():
 		else :
 			await self.client.say("{}'s GBF nickname is **{}**.".format(mention_user.display_name, UserDatas["nickname"]))
 
-	@commands.command(pass_context = True, description = "Put the server in GW mode", aliases = ["gw"])
+	@commands.command( description = "Put the server in GW mode", aliases = ["gw"])
 	async def guildwar(self, ctx, mode : str) :
 		m_author = ctx.message.author
 		m_server = ctx.message.server
@@ -776,7 +819,7 @@ class Hanapara():
 					json.dump(server_infos, sfw, indent = 4)
 
 
-	@commands.command(pass_context=True, description="Send your contribution for checking.", aliases=["cc"])
+	@commands.command(description="Send your contribution for checking.", aliases=["cc"])
 	async def contribcheck(self, ctx, amount : int) :
 		m_author = ctx.message.author
 		now = datetime.now()
@@ -830,7 +873,7 @@ class Hanapara():
 	"""
 	TODO : Instead of going through every users in the users directory, instead check every users presents in the server
 	"""
-	@commands.command(pass_context=True, description="Shows the scoreboard for the current GW", aliases=["sb"])
+	@commands.command(description="Shows the scoreboard for the current GW", aliases=["sb"])
 	async def scoreboard(self, ctx, crewname = None):
 		directory = os.walk('users/')
 		userlist = []
