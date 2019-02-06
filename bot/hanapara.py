@@ -18,7 +18,7 @@ db = sqlite3.connect("./database/sarasa_db.sqlite3")
 curs = db.cursor()
 
 async def check_user(uid, table = "main"):
-    curs.execute("SELECT uid FROM (?) WHERE uid = (?)", (uid,table))
+    curs.execute("SELECT uid FROM (?) WHERE uid = (?)", (table, uid))
     exists = curs.fetchone()
     if exists :
         return True
