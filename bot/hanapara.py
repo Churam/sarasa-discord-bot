@@ -616,7 +616,7 @@ class Hanapara():
 			crystals = spark[0][0]
 			tickets = spark[0][1]
 			10tickets = spark[0][2]
-			total_draws = int((total_crystals/300) + total_tickets + (total_10tickets*10))
+			total_draws = int((crystals/300) + tickets + (10tickets*10))
 			await ctx.send("You have {} crystals, {} draw ticket(s) and {} 10-part draw ticket(s) for a total of {} draws.".format(rystals, tickets, 10tickets, draws))
 
 
@@ -670,7 +670,7 @@ class Hanapara():
 			await ctx.send("I don't know what you're trying to do.")
 
 		await updatespark(m_author_id, crystals, tickets, 10tickets)
-		total_draws = int((total_crystals/300) + total_tickets + (total_10tickets*10))
+		total_draws = int((crystals/300) + tickets + (10tickets*10))
 		await ctx.send("You now have {} crystals, {} draw ticket(s) and {} 10-part draw ticket(s) for a total of {} draws.".format(total_crystals, total_tickets, total_10tickets, total_draws))
 
 
