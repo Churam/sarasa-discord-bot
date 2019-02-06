@@ -613,11 +613,11 @@ class Hanapara():
 		m_author_id = m_author.id
 		if ctx.invoked_subcommand is None :
 			spark = await getspark(ctx.author.id)
-			total_crystals = spark[0][0]
-			total_tickets = spark[0][1]
-			total_10tickets = spark[0][2]
+			crystals = spark[0][0]
+			tickets = spark[0][1]
+			10tickets = spark[0][2]
 			total_draws = int((total_crystals/300) + total_tickets + (total_10tickets*10))
-			await ctx.send("You have {} crystals, {} draw ticket(s) and {} 10-part draw ticket(s) for a total of {} draws.".format(total_crystals, total_tickets, total_10tickets, total_draws))
+			await ctx.send("You have {} crystals, {} draw ticket(s) and {} 10-part draw ticket(s) for a total of {} draws.".format(rystals, tickets, 10tickets, draws))
 
 
 	@spark.command(name="add", brief="- Add a certain amount of a given element.", help="Add a certain amount of a given element. \nAvailable elements :\n - Crystals : crystal, crystals \n - Draw tickets : ticket, tickets, tix \n - 10-part draw tickets : 10ticket, 10tickets, 10tix")
@@ -625,32 +625,26 @@ class Hanapara():
 		m_author = ctx.message.author
 		m_author_id = m_author.id
 		element = element.lower()
-		with open('./users/{}/userdata.json'.format(m_author_id)) as fp:
-			spark_datas = json.load(fp)
+		spark = await getspark(m_author_id)
+		crystals = spark[0][0]
+		tickets = spark[0][1]
+		10tickets = spark[0][2]
 
 		if element == "crystals" or element == "crystal" :
-			with open('./users/{}/userdata.json'.format(m_author_id), mode="w", encoding='utf-8') as fp :
-				spark_datas["spark"]["crystals"] += amount
-				json.dump(spark_datas, fp, indent=2)
+			crystals += amount
 
 		elif element == "ticket" or element == "tickets" or element == "tix" :
-			with open('./users/{}/userdata.json'.format(m_author_id), mode="w", encoding='utf-8') as fp :
-				spark_datas["spark"]["tickets"] += amount
-				json.dump(spark_datas, fp, indent=2)
+			tickets += amount
 
 		elif element == "10ticket" or element == "10tickets" or element == "10tix" :
-			with open('./users/{}/userdata.json'.format(m_author_id), mode="w", encoding='utf-8') as fp :
-				spark_datas["spark"]["10tickets"] += amount
-				json.dump(spark_datas, fp, indent=2)
+			10tickets += amount
 
 		else :
-			await self.client.send("I don't know what you're trying to do.")
+			await ctx.send("I don't know what you're trying to do.")
 
-		total_crystals = spark_datas["spark"]["crystals"]
-		total_tickets = spark_datas["spark"]["tickets"]
-		total_10tickets = spark_datas["spark"]["10tickets"]
-		total_draws = int((total_crystals/300) + total_tickets + (total_10tickets*10))
-		await self.client.send("You now have {} crystals, {} draw ticket(s) and {} 10-part draw ticket(s) for a total of {} draws.".format(total_crystals, total_tickets, total_10tickets, total_draws))
+		await updatespark(m_author_id, crystals, tickets, 10tickets)
+		total_draws = int((crystals/300) + tickets + (10tickets*10))
+		await ctx.send("You now have {} crystals, {} draw ticket(s) and {} 10-part draw ticket(s) for a total of {} draws.".format(crystals, tickets, 10tickets, total_draws))
 
 
 	@spark.command(name="set", brief="- Set a certain amount of a given element.", help="Set a certain amount of a given element. \nAvailable elements :\n - Crystals : crystal, crystals \n - Draw tickets : ticket, tickets, tix \n - 10-part draw tickets : 10ticket, 10tickets, 10tix")
@@ -658,46 +652,33 @@ class Hanapara():
 		m_author = ctx.message.author
 		m_author_id = m_author.id
 		element = element.lower()
-		with open('./users/{}/userdata.json'.format(m_author_id)) as fp:
-			spark_datas = json.load(fp)
+		spark = await getspark(m_author_id)
+		crystals = spark[0][0]
+		tickets = spark[0][1]
+		10tickets = spark[0][2]
 
 		if element == "crystals" or element == "crystal" :
-			with open('./users/{}/userdata.json'.format(m_author_id), mode="w", encoding='utf-8') as fp :
-				spark_datas["spark"]["crystals"] = amount
-				json.dump(spark_datas, fp, indent=2)
+			crystals = amount
 
 		elif element == "ticket" or element == "tickets" or element == "tix" :
-			with open('./users/{}/userdata.json'.format(m_author_id), mode="w", encoding='utf-8') as fp :
-				spark_datas["spark"]["tickets"] = amount
-				json.dump(spark_datas, fp, indent=2)
+			tickets = amount
 
 		elif element == "10ticket" or element == "10tickets" or element == "10tix" :
-			with open('./users/{}/userdata.json'.format(m_author_id), mode="w", encoding='utf-8') as fp :
-				spark_datas["spark"]["10tickets"] = amount
-				json.dump(spark_datas, fp, indent=2)
+			10tickets = amount
 
 		else :
-			await self.client.say("I don't know what you're trying to do.")
+			await ctx.send("I don't know what you're trying to do.")
 
-		total_crystals = spark_datas["spark"]["crystals"]
-		total_tickets = spark_datas["spark"]["tickets"]
-		total_10tickets = spark_datas["spark"]["10tickets"]
+		await updatespark(m_author_id, crystals, tickets, 10tickets)
 		total_draws = int((total_crystals/300) + total_tickets + (total_10tickets*10))
-		await self.client.say("You now have {} crystals, {} draw ticket(s) and {} 10-part draw ticket(s) for a total of {} draws.".format(total_crystals, total_tickets, total_10tickets, total_draws))
+		await ctx.send("You now have {} crystals, {} draw ticket(s) and {} 10-part draw ticket(s) for a total of {} draws.".format(total_crystals, total_tickets, total_10tickets, total_draws))
 
 
 	@spark.command(name="reset", help="- Resets your spark completely.")
 	async def spark_reset(self,ctx):
 		m_author = ctx.message.author
 		m_author_id = m_author.id
-		with open('./users/{}/userdata.json'.format(m_author_id)) as fp:
-			spark_datas = json.load(fp)
-
-		with open('./users/{}/userdata.json'.format(m_author_id), mode="w", encoding='utf-8') as fp :
-			spark_datas["spark"]["crystals"] = 0
-			spark_datas["spark"]["tickets"] = 0
-			spark_datas["spark"]["10tickets"] = 0
-			json.dump(spark_datas, fp, indent=2)
+		await updatespark(m_author.id)
 		await self.client.say("Spark succesfully reset.")
 
 
