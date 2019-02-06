@@ -133,7 +133,7 @@ def processImage(m_author, infile):
 		title = " "
 	crystals = userdata["spark"]["crystals"]
 	tix = userdata["spark"]["tickets"]
-	tentix = userdata["spark"]["10tickets"]
+	tentix = userdata["spark"]["tentickets"]
 	total_progress = (crystals + (tix*300) + (tentix*3000))/900
 	money = userdata["money"]
 	aboutme_txt = userdata["aboutme"]
@@ -311,7 +311,7 @@ class Hanapara():
 			title = " "
 		crystals = userdata["spark"]["crystals"]
 		tix = userdata["spark"]["tickets"]
-		tentix = userdata["spark"]["10tickets"]
+		tentix = userdata["spark"]["tentickets"]
 		total_progress = (crystals + (tix*300) + (tentix*3000))/900
 		money = userdata["money"]
 		aboutme_txt = userdata["aboutme"]
@@ -615,12 +615,12 @@ class Hanapara():
 			spark = await getspark(ctx.author.id)
 			crystals = spark[0][0]
 			tickets = spark[0][1]
-			10tickets = spark[0][2]
-			total_draws = int((crystals/300) + tickets + (10tickets*10))
-			await ctx.send("You have {} crystals, {} draw ticket(s) and {} 10-part draw ticket(s) for a total of {} draws.".format(rystals, tickets, 10tickets, draws))
+			tentickets = spark[0][2]
+			total_draws = int((crystals/300) + tickets + (tentickets*10))
+			await ctx.send("You have {} crystals, {} draw ticket(s) and {} 10-part draw ticket(s) for a total of {} draws.".format(rystals, tickets, tentickets, draws))
 
 
-	@spark.command(name="add", brief="- Add a certain amount of a given element.", help="Add a certain amount of a given element. \nAvailable elements :\n - Crystals : crystal, crystals \n - Draw tickets : ticket, tickets, tix \n - 10-part draw tickets : 10ticket, 10tickets, 10tix")
+	@spark.command(name="add", brief="- Add a certain amount of a given element.", help="Add a certain amount of a given element. \nAvailable elements :\n - Crystals : crystal, crystals \n - Draw tickets : ticket, tickets, tix \n - 10-part draw tickets : 10ticket, tentickets, 10tix")
 	async def spark_add(self, ctx, element : str, amount : int):
 		m_author = ctx.message.author
 		m_author_id = m_author.id
@@ -628,7 +628,7 @@ class Hanapara():
 		spark = await getspark(m_author_id)
 		crystals = spark[0][0]
 		tickets = spark[0][1]
-		10tickets = spark[0][2]
+		tentickets = spark[0][2]
 
 		if element == "crystals" or element == "crystal" :
 			crystals += amount
@@ -636,18 +636,18 @@ class Hanapara():
 		elif element == "ticket" or element == "tickets" or element == "tix" :
 			tickets += amount
 
-		elif element == "10ticket" or element == "10tickets" or element == "10tix" :
-			10tickets += amount
+		elif element == "10ticket" or element == "tentickets" or element == "10tix" :
+			tentickets += amount
 
 		else :
 			await ctx.send("I don't know what you're trying to do.")
 
-		await updatespark(m_author_id, crystals, tickets, 10tickets)
-		total_draws = int((crystals/300) + tickets + (10tickets*10))
-		await ctx.send("You now have {} crystals, {} draw ticket(s) and {} 10-part draw ticket(s) for a total of {} draws.".format(crystals, tickets, 10tickets, total_draws))
+		await updatespark(m_author_id, crystals, tickets, tentickets)
+		total_draws = int((crystals/300) + tickets + (tentickets*10))
+		await ctx.send("You now have {} crystals, {} draw ticket(s) and {} 10-part draw ticket(s) for a total of {} draws.".format(crystals, tickets, tentickets, total_draws))
 
 
-	@spark.command(name="set", brief="- Set a certain amount of a given element.", help="Set a certain amount of a given element. \nAvailable elements :\n - Crystals : crystal, crystals \n - Draw tickets : ticket, tickets, tix \n - 10-part draw tickets : 10ticket, 10tickets, 10tix")
+	@spark.command(name="set", brief="- Set a certain amount of a given element.", help="Set a certain amount of a given element. \nAvailable elements :\n - Crystals : crystal, crystals \n - Draw tickets : ticket, tickets, tix \n - 10-part draw tickets : 10ticket, tentickets, 10tix")
 	async def spark_set(self, ctx, element : str, amount : int):
 		m_author = ctx.message.author
 		m_author_id = m_author.id
@@ -655,7 +655,7 @@ class Hanapara():
 		spark = await getspark(m_author_id)
 		crystals = spark[0][0]
 		tickets = spark[0][1]
-		10tickets = spark[0][2]
+		tentickets = spark[0][2]
 
 		if element == "crystals" or element == "crystal" :
 			crystals = amount
@@ -663,15 +663,15 @@ class Hanapara():
 		elif element == "ticket" or element == "tickets" or element == "tix" :
 			tickets = amount
 
-		elif element == "10ticket" or element == "10tickets" or element == "10tix" :
-			10tickets = amount
+		elif element == "10ticket" or element == "tentickets" or element == "10tix" :
+			tentickets = amount
 
 		else :
 			await ctx.send("I don't know what you're trying to do.")
 
-		await updatespark(m_author_id, crystals, tickets, 10tickets)
-		total_draws = int((crystals/300) + tickets + (10tickets*10))
-		await ctx.send("You now have {} crystals, {} draw ticket(s) and {} 10-part draw ticket(s) for a total of {} draws.".format(total_crystals, total_tickets, total_10tickets, total_draws))
+		await updatespark(m_author_id, crystals, tickets, tentickets)
+		total_draws = int((crystals/300) + tickets + (tentickets*10))
+		await ctx.send("You now have {} crystals, {} draw ticket(s) and {} 10-part draw ticket(s) for a total of {} draws.".format(crystals, tickets, tentickets, total_draws))
 
 
 	@spark.command(name="reset", help="- Resets your spark completely.")
