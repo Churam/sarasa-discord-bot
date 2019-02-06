@@ -77,12 +77,8 @@ def ocr(url, overlay=False, api_key=ocr_key, language='eng'):
 	return r.content.decode()
 
 
-#Load Danbooru API key
-with open('api.json') as api_file:    
-	api_key = json.load(api_file)
-
 #Load the API Key and the Danbooru module
-danbooru_api = api_key["API"][1]["danbooru"]
+danbooru_api = api_key["API"]["danbooru"]
 dpic = Danbooru('danbooru', username='Akeyro', api_key=danbooru_api)
 
 

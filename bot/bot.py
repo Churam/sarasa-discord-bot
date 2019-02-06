@@ -84,12 +84,12 @@ async def check_user(uid, table = "main"):
     curs.execute("SELECT uid FROM (?) WHERE uid = (?)", (uid, table))
     exists = curs.fetchone()
     if exists :
-        return False
-    else :
         return True
+    else :
+        return False
 
 async def adduser(userid) :
-    if await check_user(userid) :
+    if not await check_user(userid) :
         title = ""
         about_me = ""
         money = 0
