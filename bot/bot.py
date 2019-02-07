@@ -92,7 +92,7 @@ async def on_ready():
 
 @client.event
 async def on_message(message):
-    await adduser(message.author.id, message.author.name) #Add the user if he's not registered
+    await adduser(message.author.id) #Add the user if he's not registered
     #if "loli" in message.content.lower() :
     #			await client.add_reaction(message, "\U0001F693")
     await client.process_commands(message) #Keep on_message from blocking the function calls
