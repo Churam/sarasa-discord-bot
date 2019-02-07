@@ -21,6 +21,7 @@ import textwrap
 from io import BytesIO
 from pathlib import Path
 from math import ceil
+import sqlite3
 
 #enable the logger
 logger = logging.getLogger('discord')
