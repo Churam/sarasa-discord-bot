@@ -36,7 +36,7 @@ Commented until each modules are rewritten for discordpy rewrite
 #Extensions to load when starting the bot
 #startup_extensions = ["gacha", "reddit", "danbooru", "misc", "hanapara", "goal", "wiki"] 
 
-startup_extensions = ["danbooru", "misc"]
+startup_extensions = ["danbooru", "misc", "hanapara"]
 
 #Load the Discord API Key
 with open('api.json') as api_file:    
@@ -53,28 +53,32 @@ client = commands.Bot(command_prefix='$', description=description)
 
 client.pm_help = True #Send the help message in PM
 
-    
-def adduser(userid, username):
-    if not os.path.exists("./users/{}/".format(userid)) :
-        os.makedirs("./users/{}/".format(userid))
-        with open('./users/{}/userdata.json'.format(userid), 'xt', encoding="UTF-8") as f:
-            f.write('{}')
-            f.close()
-        with open('./users/{}/userdata.json'.format(userid)) as fp:
-            usrdata = json.load(fp)
+#db connection
+db = sqlite3.connect("./database/zooey_db.sqlite3")
+curs = db.cursor()
 
-        with open('./users/{}/userdata.json'.format(userid),'w', encoding="UTF-8") as x:
-            usrdata["username"] = ""
-            usrdata["title"] = ""
-            usrdata["aboutme"] = ""
-            usrdata["money"] = 0
-            usrdata["waifu"] = []
-            usrdata["husbando"] = []
-            usrdata["spark"] = {"crystals" : 0, "tickets" : 0, "10tickets" : 0}
-            json.dump(usrdata, x, indent=2, ensure_ascii=False)
+async def check_user(uid, table = "main"):
+    curs.execute("SELECT uid FROM main WHERE uid = (?)", (uid,))
+    exists = curs.fetchall()
+    if exists :
+        return True
+    else :
+        return False
 
-def usrdata(userid):
-    return "./users/{}/userdata.json".format(userid)
+async def adduser(userid) :
+    if not await check_user(userid) :
+        title = ""
+        about_me = ""
+        money = 0
+        gbf_name = ""
+        profile_mode = "still"
+        waifu = []
+        husbando = []
+        datas = [userid, title, about_me, money, gbf_name, profile_mode, json.dumps(waifu), json.dumps(waifu), None, None]
+        curs.execute('INSERT INTO main VALUES (?,?,?,?,?,?,?,?,?,?)', datas)
+        db.commit()
+    else :
+        pass
 
 @client.event
 async def on_ready():
@@ -85,11 +89,9 @@ async def on_ready():
     print('------')
     await client.change_presence(activity=discord.Game(name="Lite Mode"))
 
-
-
 @client.event
 async def on_message(message):
-    adduser(message.author.id, message.author.name) #Add the user if he's not registered
+    await adduser(message.author.id, message.author.name) #Add the user if he's not registered
     #if "loli" in message.content.lower() :
     #			await client.add_reaction(message, "\U0001F693")
     await client.process_commands(message) #Keep on_message from blocking the function calls
@@ -98,10 +100,6 @@ async def on_message(message):
 async def active(ctx):
     print("Command received")
     await ctx.send("Yes ? Do you need me ?")
-
-@client.command()
-async def ctxtest(ctx):
-	await ctx.send("{} {}".format(ctx.author.name, ctx.author.id))
 
 @client.command(description="Restarts the bot")
 async def restart(ctx):

@@ -11,11 +11,62 @@ import requests
 from io import BytesIO
 from datetime import datetime
 import asyncio
+import sqlite3
 
+#db connection
+db = sqlite3.connect("./database/zooey_db.sqlite3")
+curs = db.cursor()
 
-#Server id for the Contributioncheck command
-gw_server_id = "246519048559394817"
+async def check_user(uid, table = "main"):
+    if table == "main" :
+        curs.execute("SELECT uid FROM main WHERE uid = (?)", (uid,))
+    elif table == "spark" :
+        curs.execute("SELECT uid FROM spark WHERE uid = (?)", (uid,))
+    exists = curs.fetchone()
+    if exists :
+        return True
+    else :
+        return False
 
+async def adduser(userid) :
+    if not await check_user(userid) :
+        title = ""
+        about_me = ""
+        money = 0
+        gbf_name = ""
+        profile_mode = "still"
+        waifu = []
+        husbando = []
+        datas = [userid, title, about_me, money, gbf_name, profile_mode, json.dumps(waifu), json.dumps(waifu), None, None]
+        curs.execute('INSERT INTO main VALUES (?,?,?,?,?,?,?,?,?,?)', datas)
+        db.commit()
+    else :
+        pass
+
+async def addspark(userid, crystals = 0, tix = 0, ten_tix = 0):
+	if not await check_user(userid, "spark") :
+		curs.execute('INSERT INTO spark VALUES (?,?,?,?)', (userid, crystals, tix, ten_tix))
+		db.commit()
+
+async def updatespark(userid, crystals = 0, tix = 0, ten_tix = 0):
+	if await check_user(userid, "spark") :
+		curs.execute("UPDATE spark SET crystal = (?), ticket = (?), ten_ticket = (?) WHERE uid = (?)", (crystals, tix, ten_tix, userid))
+		db.commit()
+	else :
+		await addspark(userid, crystals, tix, ten_tix)
+
+async def getspark(userid) :
+	await addspark(userid, 0, 0, 0)
+	curs.execute("SELECT crystal, ticket, ten_ticket FROM spark WHERE uid = (?)", (userid,))
+	spark = curs.fetchall()
+	return spark
+
+async def search_userdata(pk, col_name, table = "main"):
+	infos = [col_name, table, int(pk)]
+	curs.execute("SELECT (?) FROM (?) WHERE uid = (?)", infos)
+	res = curs.fetchone()
+	return res
+	
 
 def font(name = "rg" ,font_size = 24):
 	if name is "lt" :
@@ -78,7 +129,7 @@ def processImage(m_author, infile):
 		title = " "
 	crystals = userdata["spark"]["crystals"]
 	tix = userdata["spark"]["tickets"]
-	tentix = userdata["spark"]["10tickets"]
+	tentix = userdata["spark"]["tentickets"]
 	total_progress = (crystals + (tix*300) + (tentix*3000))/900
 	money = userdata["money"]
 	aboutme_txt = userdata["aboutme"]
@@ -234,7 +285,7 @@ class Hanapara():
 		self.client = bot
 
 
-	@commands.command(description="Show your profile", aliases=["p"], pass_context=True)
+	@commands.command(description="Show your profile", aliases=["p"])
 	async def profile(self, ctx, mention = None):
 
 		if mention is None :
@@ -256,7 +307,7 @@ class Hanapara():
 			title = " "
 		crystals = userdata["spark"]["crystals"]
 		tix = userdata["spark"]["tickets"]
-		tentix = userdata["spark"]["10tickets"]
+		tentix = userdata["spark"]["tentickets"]
 		total_progress = (crystals + (tix*300) + (tentix*3000))/900
 		money = userdata["money"]
 		aboutme_txt = userdata["aboutme"]
@@ -431,10 +482,10 @@ class Hanapara():
 			os.remove("{}.gif".format(m_author.id))
 
 	@commands.group(description="Set of command to customize one's profile.",name="set")
-	async def _set(self):
+	async def _set(self, ctx):
 		pass
 
-	@_set.command(description="Set a background (Will be resized to a height of 600px )\nAdd reset or default to reset your background", pass_context=True, name="background", aliases=["bg"])
+	@_set.command(description="Set a background (Will be resized to a height of 600px )\nAdd reset or default to reset your background", name="background", aliases=["bg"])
 	async def _background(self, ctx, link = None):
 		m_author = ctx.message.author
 		m_channel = ctx.message.channel
@@ -490,7 +541,7 @@ class Hanapara():
 
 			
 
-	@_set.command(description="Change your profile message", aliases=["am","about"], pass_context=True)
+	@_set.command(description="Change your profile message", aliases=["am","about"])
 	async def _aboutme(self, ctx, *, msg):
 		m_author = ctx.message.author
 		m_channel = ctx.message.channel
@@ -517,7 +568,7 @@ class Hanapara():
 			await self.client.say(msg)
 
 		
-	@_set.command(description="Change someone's title (Admin only)", pass_context=True, name="title")
+	@_set.command(description="Change someone's title (Admin only)", name="title")
 	async def _title(self, ctx, mention, *, msg):
 		m_author = ctx.message.author
 		mention = ctx.message.mentions[0]
@@ -533,7 +584,7 @@ class Hanapara():
 			await self.client.say("\U0000274E You don't have the right to do that.")
 
 
-	@_set.command(description="Change your profile's background to be still or animated", pass_context=True, name="mode")
+	@_set.command(description="Change your profile's background to be still or animated", name="mode")
 	async def _mode(self, ctx, mode):
 		m_author = ctx.message.author
 		with open('./users/{}/userdata.json'.format(m_author.id)) as fp:
@@ -552,155 +603,82 @@ class Hanapara():
 			await self.client.say("\U00002611 Your profile mode has been set to **still**.")
 
 
-	@commands.group(description="Stay updated about the progress of your spark !", pass_context=True)
+	@commands.group(description="Stay updated about the progress of your spark !")
 	async def spark(self, ctx):
 		m_author = ctx.message.author
 		m_author_id = m_author.id
-		with open('./users/{}/userdata.json'.format(m_author_id)) as fp:
-			spark_datas = json.load(fp)
-			spark_datas = spark_datas["spark"]
 		if ctx.invoked_subcommand is None :
-			total_crystals = spark_datas["crystals"]
-			total_tickets = spark_datas["tickets"]
-			total_10tickets = spark_datas["10tickets"]
-			total_draws = int((total_crystals/300) + total_tickets + (total_10tickets*10))
-			await self.client.say("You have {} crystals, {} draw ticket(s) and {} 10-part draw ticket(s) for a total of {} draws.".format(total_crystals, total_tickets, total_10tickets, total_draws))
+			spark = await getspark(ctx.author.id)
+			crystals = spark[0][0]
+			tickets = spark[0][1]
+			tentickets = spark[0][2]
+			total_draws = int((crystals/300) + tickets + (tentickets*10))
+			await ctx.send("You have {} crystals, {} draw ticket(s) and {} 10-part draw ticket(s) for a total of {} draws.".format(rystals, tickets, tentickets, draws))
 
 
-	@spark.command(pass_context=True, name="add", brief="- Add a certain amount of a given element.", help="Add a certain amount of a given element. \nAvailable elements :\n - Crystals : crystal, crystals \n - Draw tickets : ticket, tickets, tix \n - 10-part draw tickets : 10ticket, 10tickets, 10tix")
+	@spark.command(name="add", brief="- Add a certain amount of a given element.", help="Add a certain amount of a given element. \nAvailable elements :\n - Crystals : crystal, crystals \n - Draw tickets : ticket, tickets, tix \n - 10-part draw tickets : 10ticket, tentickets, 10tix")
 	async def spark_add(self, ctx, element : str, amount : int):
 		m_author = ctx.message.author
 		m_author_id = m_author.id
 		element = element.lower()
-		with open('./users/{}/userdata.json'.format(m_author_id)) as fp:
-			spark_datas = json.load(fp)
+		spark = await getspark(m_author_id)
+		crystals = spark[0][0]
+		tickets = spark[0][1]
+		tentickets = spark[0][2]
 
 		if element == "crystals" or element == "crystal" :
-			with open('./users/{}/userdata.json'.format(m_author_id), mode="w", encoding='utf-8') as fp :
-				spark_datas["spark"]["crystals"] += amount
-				json.dump(spark_datas, fp, indent=2)
+			crystals += amount
 
 		elif element == "ticket" or element == "tickets" or element == "tix" :
-			with open('./users/{}/userdata.json'.format(m_author_id), mode="w", encoding='utf-8') as fp :
-				spark_datas["spark"]["tickets"] += amount
-				json.dump(spark_datas, fp, indent=2)
+			tickets += amount
 
-		elif element == "10ticket" or element == "10tickets" or element == "10tix" :
-			with open('./users/{}/userdata.json'.format(m_author_id), mode="w", encoding='utf-8') as fp :
-				spark_datas["spark"]["10tickets"] += amount
-				json.dump(spark_datas, fp, indent=2)
+		elif element == "10ticket" or element == "tentickets" or element == "10tix" :
+			tentickets += amount
 
 		else :
-			await self.client.say("I don't know what you're trying to do.")
+			await ctx.send("I don't know what you're trying to do.")
 
-		total_crystals = spark_datas["spark"]["crystals"]
-		total_tickets = spark_datas["spark"]["tickets"]
-		total_10tickets = spark_datas["spark"]["10tickets"]
-		total_draws = int((total_crystals/300) + total_tickets + (total_10tickets*10))
-		await self.client.say("You now have {} crystals, {} draw ticket(s) and {} 10-part draw ticket(s) for a total of {} draws.".format(total_crystals, total_tickets, total_10tickets, total_draws))
+		await updatespark(m_author_id, crystals, tickets, tentickets)
+		total_draws = int((crystals/300) + tickets + (tentickets*10))
+		await ctx.send("You now have {} crystals, {} draw ticket(s) and {} 10-part draw ticket(s) for a total of {} draws.".format(crystals, tickets, tentickets, total_draws))
 
 
-	@spark.command(pass_context=True, name="set", brief="- Set a certain amount of a given element.", help="Set a certain amount of a given element. \nAvailable elements :\n - Crystals : crystal, crystals \n - Draw tickets : ticket, tickets, tix \n - 10-part draw tickets : 10ticket, 10tickets, 10tix")
+	@spark.command(name="set", brief="- Set a certain amount of a given element.", help="Set a certain amount of a given element. \nAvailable elements :\n - Crystals : crystal, crystals \n - Draw tickets : ticket, tickets, tix \n - 10-part draw tickets : 10ticket, tentickets, 10tix")
 	async def spark_set(self, ctx, element : str, amount : int):
 		m_author = ctx.message.author
 		m_author_id = m_author.id
 		element = element.lower()
-		with open('./users/{}/userdata.json'.format(m_author_id)) as fp:
-			spark_datas = json.load(fp)
+		spark = await getspark(m_author_id)
+		crystals = spark[0][0]
+		tickets = spark[0][1]
+		tentickets = spark[0][2]
 
 		if element == "crystals" or element == "crystal" :
-			with open('./users/{}/userdata.json'.format(m_author_id), mode="w", encoding='utf-8') as fp :
-				spark_datas["spark"]["crystals"] = amount
-				json.dump(spark_datas, fp, indent=2)
+			crystals = amount
 
 		elif element == "ticket" or element == "tickets" or element == "tix" :
-			with open('./users/{}/userdata.json'.format(m_author_id), mode="w", encoding='utf-8') as fp :
-				spark_datas["spark"]["tickets"] = amount
-				json.dump(spark_datas, fp, indent=2)
+			tickets = amount
 
-		elif element == "10ticket" or element == "10tickets" or element == "10tix" :
-			with open('./users/{}/userdata.json'.format(m_author_id), mode="w", encoding='utf-8') as fp :
-				spark_datas["spark"]["10tickets"] = amount
-				json.dump(spark_datas, fp, indent=2)
+		elif element == "10ticket" or element == "tentickets" or element == "10tix" :
+			tentickets = amount
 
 		else :
-			await self.client.say("I don't know what you're trying to do.")
+			await ctx.send("I don't know what you're trying to do.")
 
-		total_crystals = spark_datas["spark"]["crystals"]
-		total_tickets = spark_datas["spark"]["tickets"]
-		total_10tickets = spark_datas["spark"]["10tickets"]
-		total_draws = int((total_crystals/300) + total_tickets + (total_10tickets*10))
-		await self.client.say("You now have {} crystals, {} draw ticket(s) and {} 10-part draw ticket(s) for a total of {} draws.".format(total_crystals, total_tickets, total_10tickets, total_draws))
+		await updatespark(m_author_id, crystals, tickets, tentickets)
+		total_draws = int((crystals/300) + tickets + (tentickets*10))
+		await ctx.send("You now have {} crystals, {} draw ticket(s) and {} 10-part draw ticket(s) for a total of {} draws.".format(crystals, tickets, tentickets, total_draws))
 
 
-	@spark.command(pass_context=True, name="reset", help="- Resets your spark completely.")
+	@spark.command(name="reset", help="- Resets your spark completely.")
 	async def spark_reset(self,ctx):
 		m_author = ctx.message.author
 		m_author_id = m_author.id
-		with open('./users/{}/userdata.json'.format(m_author_id)) as fp:
-			spark_datas = json.load(fp)
-
-		with open('./users/{}/userdata.json'.format(m_author_id), mode="w", encoding='utf-8') as fp :
-			spark_datas["spark"]["crystals"] = 0
-			spark_datas["spark"]["tickets"] = 0
-			spark_datas["spark"]["10tickets"] = 0
-			json.dump(spark_datas, fp, indent=2)
+		await updatespark(m_author.id)
 		await self.client.say("Spark succesfully reset.")
 
 
-	@commands.group(description="Currency related commands.", aliases=["$"])
-	async def money(self):
-		pass
-
-
-	@money.command(description="! Admin Only ! Add flowers to someone's account.", name="add", pass_context=True)
-	async def _add(self, ctx, mention, amount : int ):
-		
-		m_author = ctx.message.author
-		mention = ctx.message.mentions[0]
-		author_permissions = m_author.permissions_in(ctx.message.channel)
-
-		if mention is None or amount is None:
-			await self.client.say("\U0000274E | Correct format is `$$ add <mention> <amount>`")
-
-		elif author_permissions.administrator:
-			with open("./users/{}/userdata.json".format(mention.id)) as fp:
-				data = json.load(fp)
-			with open("./users/{}/userdata.json".format(mention.id), "w", encoding="UTF-8") as f:
-				data["money"] += amount
-				json.dump(data,f, indent=2)
-			await self.client.say("\U0001F4B5 | Successfully gave {}\U0001F4AE to **{}**".format(amount,mention.mention))
-		
-		else :
-			await self.client.say("\U0000274E | You don't have the right to do that.")
-
-
-	@money.command(description="Transfer flowers to someone.", name="give", pass_context=True)
-	async def _give(self, ctx, mention, amount : int ):
-		
-		m_author = ctx.message.author
-		mention = ctx.message.mentions[0]
-		author_permissions = m_author.permissions_in(ctx.message.channel)
-		with open("./users/{}/userdata.json".format(m_author.id)) as x:
-			authordata = json.load(x)
-		author_money = authordata["money"]
-		if author_money < amount :
-			await self.client.say("\U0000274E | You don't have enough {}\U0001F4AE to do that.")
-
-		else :
-			with open("./users/{}/userdata.json".format(mention.id)) as fp:
-				targetdata = json.load(fp)
-			with open("./users/{}/userdata.json".format(mention.id), "w", encoding="UTF-8") as f:
-				targetdata["money"] += amount
-				json.dump(targetdata,f, indent=2)
-
-			with open("./users/{}/userdata.json".format(m_author.id), 'w', encoding="UTF-8") as y:
-				authordata["money"] -= amount
-				json.dump(authordata,y, indent=2)
-			await self.client.say("\U0001F4B5 | Successfully transferred {}\U0001F4AE to **{}**".format(amount,mention.mention))
-
-
-	@commands.command(pass_context=True, description="Set or change your registered GBF nickname.", aliases=["pn"])
+	@commands.command(description="Set or change your registered GBF nickname.", aliases=["pn"])
 	async def playername(self, ctx, *, nickname=None) :
 		nickname = str(nickname)
 		m_author = ctx.message.author
@@ -720,7 +698,7 @@ class Hanapara():
 			await self.client.say("Your registered player name was set to **{}**".format(nickname))
 
 
-	@commands.command(pass_context=True, description="Check someone's GBF nickname.", aliases=["cn"])
+	@commands.command(description="Check someone's GBF nickname.", aliases=["cn"])
 	async def checkname(self, ctx):
 		mention_user = ctx.message.mentions[0]
 		with open(usrdata(mention_user.id)) as fp :
@@ -730,182 +708,6 @@ class Hanapara():
 			await self.client.say("{} hasn't registered a GBF nickname.".format(mention_user.display_name))
 		else :
 			await self.client.say("{}'s GBF nickname is **{}**.".format(mention_user.display_name, UserDatas["nickname"]))
-
-	@commands.command(pass_context = True, description = "Put the server in GW mode", aliases = ["gw"])
-	async def guildwar(self, ctx, mode : str) :
-		m_author = ctx.message.author
-		m_server = ctx.message.server
-		serv_path = Path("./servers/{}.json".format(ctx.message.server.id))
-		if (mode != "on" and mode != "off") or not m_author.permissions_in(ctx.message.channel).administrator :
-			pass
-		else :
-			create_server_file(m_server.id, ctx.message)
-			with open("./servers/{}.json".format(m_server.id), 'r') as sfr :
-				server_infos = json.load(sfr)
-			if mode == "on" and server_infos["gw"] == False:
-				for i in m_server.members :
-					with open(usrdata(i.id), 'r') as fr :
-						infos = json.load(fr)
-					if "nickname" not in infos :
-						print("{} hasn't registered a GBF nickname.".format(i.display_name))
-					elif not i.permissions_in(ctx.message.channel).administrator :
-						with open(usrdata(i.id), 'w') as fw :
-							infos["tmp_nickname"] = i.display_name
-							json.dump(infos, fw, indent = 4)
-						await self.client.change_nickname(i, infos["nickname"])
-				await self.client.say("GW mode enabled successfully")
-				with open("./servers/{}.json".format(m_server.id), 'w') as sfw :
-					server_infos["gw"] = True
-					json.dump(server_infos, sfw, indent = 4)
-
-			elif mode == "off" and server_infos["gw"] == True:
-				for i in m_server.members :
-					with open(usrdata(i.id), 'r') as fr :
-						infos = json.load(fr)
-					if "tmp_nickname" not in infos :
-						pass
-					elif not i.permissions_in(ctx.message.channel).administrator :
-						await self.client.change_nickname(i, infos["tmp_nickname"])
-				await self.client.say("GW mode disabled successfully")
-				with open("./servers/{}.json".format(m_server.id), 'w') as sfw :
-					server_infos["gw"] = False
-					json.dump(server_infos, sfw, indent = 4)
-
-
-	@commands.command(pass_context=True, description="Send your contribution for checking.", aliases=["cc"])
-	async def contribcheck(self, ctx, amount : int) :
-		m_author = ctx.message.author
-		now = datetime.now()
-		month = now.month
-		year = now.year
-		server_id = ctx.message.server.id
-		global gw_server_id
-
-		if server_id not in gw_server_id :
-			await self.client.say("\U0000274E | You cannot do that here.")
-		else :
-
-			with open(usrdata(m_author.id), encoding="UTF-8") as fp :
-				userdata = json.load(fp)
-
-			if userdata.get("totalcontrib-{}{}".format(month,year)) is None :
-				with open(usrdata(m_author.id), 'w', encoding="UTF-8") as x :
-					userdata["totalcontrib-{}{}".format(month,year)] = 0
-					json.dump(userdata,x, indent=2)
-
-			if amount < userdata["totalcontrib-{}{}".format(month,year)] :
-				await self.client.say("\U0000274E | The contribution you submitted is lower than your current amount of total contribution, please make sure you submitted the total contribution instead of the daily.")
-
-			else :
-				await self.client.add_reaction(ctx.message, "\U00002705")
-				await self.client.add_reaction(ctx.message, "\U0000274E")
-
-				res = await self.client.wait_for_reaction(['\U00002705', '\U0000274E'], message=ctx.message)
-				res_perm = res.user.permissions_in(ctx.message.channel)
-
-				while res_perm.administrator is False and res.user.id != "90878360053366784":
-					res = await self.client.wait_for_reaction(['\U00002705', '\U0000274E'], message=ctx.message)
-					res_perm = res.user.permissions_in(ctx.message.channel)
-
-				if res.reaction.emoji in '\U0000274E' :
-					await self.client.say('\U0000274E | Your contribution check was denied.')
-
-				elif res.reaction.emoji in '\U00002705' :
-
-					with open(usrdata(m_author.id), 'w', encoding="UTF-8") as f :
-						money_amount = amount - userdata["totalcontrib-{}{}".format(month,year)]
-						userdata["money"] += (int(round(money_amount/10000)))
-						userdata["totalcontrib-{}{}".format(month,year)] = amount
-						json.dump(userdata,f, indent=2)
-
-					await self.client.say("\U00002705 | Your contribution check was validated and {}\U0001F4AE were added to your account.".format(int(round(money_amount/10000))))
-
-
-	# ----------------------------------- Text Command ------------------------------------- #
-
-	"""
-	TODO : Instead of going through every users in the users directory, instead check every users presents in the server
-	"""
-	@commands.command(pass_context=True, description="Shows the scoreboard for the current GW", aliases=["sb"])
-	async def scoreboard(self, ctx, crewname = None):
-		directory = os.walk('users/')
-		userlist = []
-		now = datetime.now()
-		month = now.month
-		year = now.year
-		server = ctx.message.server
-		embedcolor = discord.Colour.teal()
-		if crewname is not None :
-			crewname = crewname.lower()
-			for i in ctx.message.server.roles :
-				if i.name.lower() in crewname :
-					embedcolor = i.colour
-
-
-		for x in directory :
-			uid = x[0].replace("users/","")
-			userlist.append(uid)
-
-
-		del userlist[0]
-
-		scoreboard = {}
-
-		for i in userlist :
-			with open("./users/{}/userdata.json".format(i)) as fp :
-				userdata = json.load(fp)
-
-			if userdata.get("totalcontrib-{}{}".format(month,year)) is None :
-				pass
-
-			else :
-				try :
-					member = server.get_member(i)
-					m_roles = member.roles
-				except Exception as e :
-					print(e)
-					pass
-				position = 0
-				m_rolesname = []
-				for i in m_roles :
-					m_rolesname.append(i.name.lower())
-					position+=1
-
-
-				if member is None :
-					pass
-				
-				elif crewname is None :
-					scoreboard[member.name.title] = userdata["totalcontrib-{}{}".format(month,year)]
-
-				elif crewname in m_rolesname :
-					scoreboard[member.name.title()] = userdata["totalcontrib-{}{}".format(month,year)]
-
-				elif crewname not in m_roles :
-					pass
-
-
-		res = list(sorted(scoreboard, key=scoreboard.__getitem__, reverse=True))
-		nicknames = ""
-		scores = ""
-		counter = 1
-		totalscore = 0
-		for i in res :
-			nicknames += "{} - {}       \n\n".format(counter,i)
-			totalscore += scoreboard[i]
-			scores += "{:,}\n\n".format(scoreboard[i])
-			#print("{} {}".format(i, scoreboard[i]))
-			counter += 1
-
-		if crewname is None:
-			crewname = ""
-		else :
-			crewname = crewname.title()
-		embedobj = discord.Embed(title="{} Ranking for this month's GW".format(crewname), colour=embedcolor)
-		embedobj.add_field(name="Nickname", value=nicknames, inline=True)
-		embedobj.add_field(name="Score", value=scores, inline=True)
-		embedobj.add_field(name="Total score", value="\n{:,}".format(totalscore), inline=False)
-		await self.client.send_message(ctx.message.channel,embed=embedobj)
 
 def setup(bot):
 	bot.add_cog(Hanapara(bot))
