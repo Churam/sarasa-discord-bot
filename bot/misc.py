@@ -519,6 +519,19 @@ class Misc():
 			await ctx.send('An error occured while trying to download the video.')
 			print(e)
 
+	@commands.command(description = "What would your name be if your were in the Organization XIII ?", aliases = ["xiii"])
+	async def XIII(self, ctx, name) :
+		letters = list(name)
+		letters.append("x")
+		len_text = len(letters)
+		result = ""
+
+		while bool(letters) :
+			random_letter = random.choice(letters)
+			result += random_letter
+			letters.remove(random_letter)
+
+		await ctx.send(result.lower().title())
 
 def setup(bot):
 	bot.add_cog(Misc(bot))
