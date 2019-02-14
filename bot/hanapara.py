@@ -104,7 +104,7 @@ def create_server_file(server_id, message) :
 
 
 #Processes animated profiles
-def processImage(m_author, infile):
+async def processImage(m_author, infile):
 	try:
 		im = Image.open(infile)
 	except IOError:
