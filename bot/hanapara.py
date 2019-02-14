@@ -303,7 +303,7 @@ class Hanapara():
 			m_author = ctx.message.mentions[0]
 
 		m_channel = ctx.message.channel
-		await self.client.send_typing(m_channel)
+		await ctx.channel.trigger_typing()
 
 		nickname = m_author.display_name
 
@@ -466,8 +466,8 @@ class Hanapara():
 
 			canvas.thumbnail((300,300), Image.BICUBIC)
 			canvas.save("{}.png".format(m_author.id))
-			await self.client.send_file(m_channel,"{}.png".format(m_author.id))
-			await asyncio.sleep(15)
+			await ctx.send(file = "{}.png".format(m_author.id))
+			await asyncio.sleep(10)
 			os.remove("{}.png".format(m_author.id))
 
 		elif "animated" in userdata[3]:
