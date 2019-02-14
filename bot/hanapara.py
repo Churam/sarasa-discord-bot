@@ -137,9 +137,9 @@ async def processImage(m_author, infile):
 	if title is "" :
 		title = " "
 	sparkdata = await getspark(m_author.id)
-	crystals = sparkdata[0]
-	tix = sparkdata[1]
-	tentix = sparkdata[2]
+	crystals = sparkdata[0][0]
+	tix = sparkdata[0][1]
+	tentix = sparkdata[0][2]
 	total_progress = (crystals + (tix*300) + (tentix*3000))/900
 	money = userdata[2]
 	aboutme_txt = userdata[1]
