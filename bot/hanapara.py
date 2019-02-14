@@ -466,7 +466,7 @@ class Hanapara():
 
 			canvas.thumbnail((300,300), Image.BICUBIC)
 			canvas.save("{}.png".format(m_author.id))
-			await ctx.send(file = "{}.png".format(m_author.id))
+			await ctx.send(file = discord.File("{}.png".format(m_author.id)))
 			await asyncio.sleep(10)
 			os.remove("{}.png".format(m_author.id))
 
