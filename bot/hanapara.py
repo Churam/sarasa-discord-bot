@@ -329,10 +329,9 @@ class Hanapara():
 
 			#Check if the user already has a background picture, if not use the default one.
 			curs.execute("SELECT bg FROM main WHERE uid = (?)", (m_author.id,))
-			bg_data = curs.fetchone()
-			print(bg_data)
+			bg_data = curs.fetchone()[0]
 			if bg_data:
-				background = Image.open(bg_data)
+				background = Image.open(BytesIO(bg_data))
 			else :
 				background = Image.open("./assets/bg.png")
 			canvas.paste(background,(int((600-background.size[0])/2),0))
