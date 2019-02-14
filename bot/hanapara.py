@@ -129,8 +129,8 @@ async def processImage(m_author, infile):
 		pass # end of sequence
 
 	nickname = m_author.display_name
-	if not await check_user(userid) :
-		await adduser(m_author_id)
+	if not await check_user(m_author.id) :
+		await adduser(m_author.id)
 	curs.execute("SELECT title, about_me, money FROM main WHERE uid = (?)", (m_author.id,))
 	userdata = curs.fetchone()
 	title = userdata[0]
@@ -307,8 +307,8 @@ class Hanapara():
 
 		nickname = m_author.display_name
 
-		if not await check_user(userid) :
-			await adduser(m_author_id)
+		if not await check_user(m_author.id) :
+			await adduser(m_author.id)
 		curs.execute("SELECT title, about_me, money, profile_mode FROM main WHERE uid = (?)", (m_author.id,))
 		userdata = curs.fetchone()
 		title = userdata[0]
