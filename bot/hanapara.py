@@ -49,7 +49,7 @@ async def getuser(userid) :
 
 async def updateuser(userid, column, content):
 	if not await check_user(userid) :
-		curs.execute("UPDATE main set (?) = (?) where uid = (?)", (column, content, userid))
+		curs.execute("UPDATE main set (?) = (?) WHERE uid = (?)", (column, content, userid))
 		db.commit()
 	else :
 		pass
@@ -325,6 +325,7 @@ class Hanapara():
 		money = userdata[2]
 		aboutme_txt = userdata[1]
 		response = requests.get(m_author.avatar_url)
+		print(userdata[3])
 
 		if "still" in userdata[3] :
 
