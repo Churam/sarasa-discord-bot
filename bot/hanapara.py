@@ -47,6 +47,13 @@ async def getuser(userid) :
 	if not await check_user(userid) :
 		curs.execute("SELECT title, about_me, money,")
 
+async def updateuser(userid, column, content):
+	if not await check_user(userid) :
+		curs.execute("UPDATE main set (?) = (?) where uid = (?)", (column, content, userid))
+		db.commit()
+	else :
+		pass
+
 async def addspark(userid, crystals = 0, tix = 0, ten_tix = 0):
 	if not await check_user(userid, "spark") :
 		curs.execute('INSERT INTO spark VALUES (?,?,?,?)', (userid, crystals, tix, ten_tix))
@@ -104,11 +111,7 @@ def create_server_file(server_id, message) :
 
 
 #Processes animated profiles
-async def processImage(m_author, infile):
-	try:
-		im = Image.open(infile)
-	except IOError:
-		print("Cant load", infile)
+async def processImage(m_author, im):
 	i = 0
 	frames = []
 	new_frames = []
@@ -472,19 +475,21 @@ class Hanapara():
 
 		elif "animated" in userdata[3]:
 			#Check if bg exists
-			bg_path = Path("./users/{}/bg.gif".format(m_author.id))
-			if bg_path.is_file():
-				background = Image.open("./users/{}/bg.gif".format(m_author.id))
+			aait ctx.channel.trigger_typing()
+			curs.execute("SELECT bg_anim FROM main WHERE uid = (?)", (m_author.id,))
+			bg_data = curs.fetchone()[0]
+			if bg_data:
+				background = Image.open(BytesIO(bg_data))
 			else :
 				background = Image.open("./assets/bg.gif")
 
-			gif = processImage(m_author, bg_path)
-			gif_duration = gif['duration']
+			gif = await processImage(m_author, background)
+			gif_duration = gif["duration"]
 			gif = gif["gif"]
 			gifcanvas = gif[0]
 			del gif[0]
 			gifcanvas.save("{}.gif".format(m_author.id), save_all=True, append_images=gif, loop=99, duration=gif_duration)
-			await self.client.send_file(ctx.message.channel,"{}.gif".format(m_author.id))
+			await ctx.send(file = discord.File("{}.gif".format(m_author.id)))
 			await asyncio.sleep(15)
 			os.remove("{}.gif".format(m_author.id))
 
@@ -552,9 +557,6 @@ class Hanapara():
 	async def _aboutme(self, ctx, *, msg):
 		m_author = ctx.message.author
 		m_channel = ctx.message.channel
-		with open("./users/{}/userdata.json".format(m_author.id)) as fp:
-			data = json.load(fp)
-
 		linewidth = 30
 		aboutme_txt = msg
 		aboutme_wrap = textwrap.wrap(aboutme_txt, width=linewidth)
@@ -568,9 +570,7 @@ class Hanapara():
 			await self.client.say("\U0000274E Your message is too long")
 
 		else :
-			with open("./users/{}/userdata.json".format(m_author.id), 'w', encoding="UTF-8") as f:
-				data["aboutme"] = msg
-				json.dump(data,f, ensure_ascii=False, indent=2)
+			await updateuser(m_author.id, "about", msg)
 			msg = "\U00002611 Your profile has been successfully changed." 
 			await self.client.say(msg)
 
@@ -581,11 +581,7 @@ class Hanapara():
 		mention = ctx.message.mentions[0]
 		author_permissions = m_author.permissions_in(ctx.message.channel)
 		if author_permissions.administrator :
-			with open("./users/{}/userdata.json".format(mention.id)) as fp:
-				data = json.load(fp)
-			with open("./users/{}/userdata.json".format(mention.id), "w", encoding="UTF-8") as f:
-				data["title"] = msg
-				json.dump(data,f, indent=2)
+			await updateuser(m_author.id, "title", msg)
 			await self.client.say("{}'s title successfully set to **{}**".format(mention.mention, msg))
 		else :
 			await self.client.say("\U0000274E You don't have the right to do that.")
@@ -594,19 +590,13 @@ class Hanapara():
 	@_set.command(description="Change your profile's background to be still or animated", name="mode")
 	async def _mode(self, ctx, mode):
 		m_author = ctx.message.author
-		with open('./users/{}/userdata.json'.format(m_author.id)) as fp:
-			data = json.load(fp)
 
 		if "animated" in mode or "gif" in mode or "GIF" in mode :
-			with open('./users/{}/userdata.json'.format(m_author.id),'w', encoding="UTF-8") as f:
-				data["profile_mode"] = "animated"
-				json.dump(data,f, indent=2)
+			await updateuser(m_author.id, "profile_mode", "animated")
 			await self.client.say("\U00002611 Your profile mode has been set to **animated**.")
 
 		elif "still" in mode or "jpg" in mode or "png" in mode :
-			with open('./users/{}/userdata.json'.format(m_author.id),'w', encoding="UTF-8") as f:
-				data["profile_mode"] = "still"
-				json.dump(data,f, indent=2)
+			await updateuser(m_author.id, "profile_mode", "still")
 			await self.client.say("\U00002611 Your profile mode has been set to **still**.")
 
 
