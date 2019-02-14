@@ -48,7 +48,7 @@ async def getuser(userid) :
 		curs.execute("SELECT title, about_me, money,")
 
 async def updateuser(userid, column, content):
-	if not await check_user(userid) :
+	if await check_user(userid) :
 		print("OK")
 		curs.execute("UPDATE main set (?) = (?) WHERE uid = (?)", (column, content, userid))
 		db.commit()
