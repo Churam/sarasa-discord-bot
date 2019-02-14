@@ -476,7 +476,7 @@ class Hanapara():
 		elif "animated" in userdata[3]:
 			#Check if bg exists
 			await ctx.channel.trigger_typing()
-			curs.execute("SELECT bg_anim FROM main WHERE uid = (?)", (m_author.id,))
+			curs.execute("SELECT anim_bg FROM main WHERE uid = (?)", (m_author.id,))
 			bg_data = curs.fetchone()[0]
 			if bg_data:
 				background = Image.open(BytesIO(bg_data))
