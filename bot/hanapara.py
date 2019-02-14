@@ -18,30 +18,34 @@ db = sqlite3.connect("./database/sarasa_db.sqlite3")
 curs = db.cursor()
 
 async def check_user(uid, table = "main"):
-    if table == "main" :
-        curs.execute("SELECT uid FROM main WHERE uid = (?)", (uid,))
-    elif table == "spark" :
-        curs.execute("SELECT uid FROM spark WHERE uid = (?)", (uid,))
-    exists = curs.fetchone()
-    if exists :
-        return True
-    else :
-        return False
+	if table == "main" :
+		curs.execute("SELECT uid FROM main WHERE uid = (?)", (uid,))
+	elif table == "spark" :
+		curs.execute("SELECT uid FROM spark WHERE uid = (?)", (uid,))
+	exists = curs.fetchone()
+	if exists :
+		return True
+	else :
+		return False
 
 async def adduser(userid) :
-    if not await check_user(userid) :
-        title = ""
-        about_me = ""
-        money = 0
-        gbf_name = ""
-        profile_mode = "still"
-        waifu = []
-        husbando = []
-        datas = [userid, title, about_me, money, gbf_name, profile_mode, json.dumps(waifu), json.dumps(waifu), None, None]
-        curs.execute('INSERT INTO main VALUES (?,?,?,?,?,?,?,?,?,?)', datas)
-        db.commit()
-    else :
-        pass
+	if not await check_user(userid) :
+		title = ""
+		about_me = ""
+		money = 0
+		gbf_name = ""
+		profile_mode = "still"
+		waifu = []
+		husbando = []
+		datas = [userid, title, about_me, money, gbf_name, profile_mode, json.dumps(waifu), json.dumps(waifu), None, None]
+		curs.execute('INSERT INTO main VALUES (?,?,?,?,?,?,?,?,?,?)', datas)
+		db.commit()
+	else :
+		pass
+
+async def getuser(userid) :
+	if not await check_user(userid) :
+		curs.execute("SELECT title, about_me, money,")
 
 async def addspark(userid, crystals = 0, tix = 0, ten_tix = 0):
 	if not await check_user(userid, "spark") :
@@ -63,7 +67,7 @@ async def getspark(userid) :
 
 async def search_userdata(pk, col_name, table = "main"):
 	infos = [col_name, table, int(pk)]
-	curs.execute("SELECT (?) FROM (?) WHERE uid = (?)", infos)
+	curs.execute("SELECT (?) FROM main WHERE uid = (?)", infos)
 	res = curs.fetchone()
 	return res
 	
@@ -101,8 +105,6 @@ def create_server_file(server_id, message) :
 
 #Processes animated profiles
 def processImage(m_author, infile):
-	with open("./users/{}/userdata.json".format(m_author.id)) as fp:
-		userdata = json.load(fp)
 	try:
 		im = Image.open(infile)
 	except IOError:
@@ -127,16 +129,20 @@ def processImage(m_author, infile):
 		pass # end of sequence
 
 	nickname = m_author.display_name
-
-	title = userdata["title"]
+	if not await check_user(userid) :
+		await adduser(m_author_id) :
+	curs.execute("SELECT title, about_me, money FROM main WHERE uid = (?)", (m_author.id,))
+	userdata = curs.fetchone()
+	title = userdata[0]
 	if title is "" :
 		title = " "
-	crystals = userdata["spark"]["crystals"]
-	tix = userdata["spark"]["tickets"]
-	tentix = userdata["spark"]["tentickets"]
+	sparkdata = await getspark(m_author.id)
+	crystals = sparkdata[0]
+	tix = sparkdata[1]
+	tentix = sparkdata[2]
 	total_progress = (crystals + (tix*300) + (tentix*3000))/900
-	money = userdata["money"]
-	aboutme_txt = userdata["aboutme"]
+	money = userdata[2]
+	aboutme_txt = userdata[1]
 	response = requests.get(m_author.avatar_url)
 
 	for i in frames :
@@ -291,44 +297,41 @@ class Hanapara():
 
 	@commands.command(description="Show your profile", aliases=["p"])
 	async def profile(self, ctx, mention = None):
-
 		if mention is None :
 			m_author = ctx.message.author
-
 		else :
 			m_author = ctx.message.mentions[0]
 
 		m_channel = ctx.message.channel
 		await self.client.send_typing(m_channel)
 
-		with open('./users/{}/userdata.json'.format(m_author.id)) as n:
-			userdata = json.load(n)
-
 		nickname = m_author.display_name
 
-		title = userdata["title"]
+		if not await check_user(userid) :
+			await adduser(m_author_id) :
+		curs.execute("SELECT title, about_me, money, profile_mode FROM main WHERE uid = (?)", (m_author.id,))
+		userdata = curs.fetchone()
+		title = userdata[0]
 		if title is "" :
 			title = " "
-		crystals = userdata["spark"]["crystals"]
-		tix = userdata["spark"]["tickets"]
-		tentix = userdata["spark"]["tentickets"]
+		sparkdata = await getspark(m_author.id)
+		crystals = sparkdata[0]
+		tix = sparkdata[1]
+		tentix = sparkdata[2]
 		total_progress = (crystals + (tix*300) + (tentix*3000))/900
-		money = userdata["money"]
-		aboutme_txt = userdata["aboutme"]
+		money = userdata[2]
+		aboutme_txt = userdata[1]
 		response = requests.get(m_author.avatar_url)
-		if userdata.get("profile_mode") is None :
-			with open("./users/{}/userdata.json".format(m_author.id),'w', encoding="UTF-8") as s:
-				userdata["profile_mode"] = "still"
-				json.dump(userdata,s, indent=2)
 
-		if "still" in userdata["profile_mode"] :
+		if "still" in userdata[3] :
 
 			canvas = Image.new("RGBA",(600,600),color=(255, 255, 255, 255))
 
 			#Check if the user already has a background picture, if not use the default one.
-			bg_path = Path("./users/{}/bg.jpg".format(m_author.id))
-			if bg_path.is_file():
-				background = Image.open("./users/{}/bg.jpg".format(m_author.id))
+			curs.execute("SELECT bg FROM main WHERE uid = (?)", (m_author.id,))
+			bg_data = curs.fetchone()[0]
+			if bg_data:
+				background = Image.open(bg_data)
 			else :
 				background = Image.open("./assets/bg.png")
 			canvas.paste(background,(int((600-background.size[0])/2),0))
@@ -467,7 +470,7 @@ class Hanapara():
 			await asyncio.sleep(15)
 			os.remove("{}.png".format(m_author.id))
 
-		elif "animated" in userdata["profile_mode"]:
+		elif "animated" in userdata[3]:
 			#Check if bg exists
 			bg_path = Path("./users/{}/bg.gif".format(m_author.id))
 			if bg_path.is_file():
