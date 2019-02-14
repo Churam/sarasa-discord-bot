@@ -475,7 +475,7 @@ class Hanapara():
 
 		elif "animated" in userdata[3]:
 			#Check if bg exists
-			aait ctx.channel.trigger_typing()
+			await ctx.channel.trigger_typing()
 			curs.execute("SELECT bg_anim FROM main WHERE uid = (?)", (m_author.id,))
 			bg_data = curs.fetchone()[0]
 			if bg_data:
@@ -522,10 +522,10 @@ class Hanapara():
 				bg.convert('RGB').save('./users/{}/bg.jpg'.format(m_author.id))
 
 			msg = "\U00002611 Your background has been successfully changed." 
-			await self.client.say(msg)
+			await ctx.send(msg)
 		except IndexError :
 			if link is None :
-				await self.client.say("\U0000274E Please attach a picture to your message or send a link.")
+				await ctx.send("\U0000274E Please attach a picture to your message or send a link.")
 
 			elif link.endswith(".jpg") or link.endswith(".png") and link.startswith("http") :
 				bg_url = link
@@ -538,18 +538,18 @@ class Hanapara():
 				bg = bg.resize((wsize,baseheight), Image.BICUBIC)
 
 				bg.convert('RGB').save('./users/{}/bg.jpg'.format(m_author.id))
-				await self.client.say("\U00002611 Your background has been successfully changed.")
+				await ctx.send("\U00002611 Your background has been successfully changed.")
 
 			elif link.endswith(".gif"):
 				dl = requests.get(link)
 				with open("./users/{}/bg.gif".format(m_author.id), "wb") as f:
 					f.write(dl.content)
-				await self.client.say("\U00002611 Your background has been successfully changed.")
+				await ctx.send("\U00002611 Your background has been successfully changed.")
 
 
 			elif link.startswith("default") or link.startswith("reset") :
 				os.remove("./users/{}/bg.jpg".format(m_author.id))
-				await self.client.say("\U00002611 Your background has been successfully reset.")
+				await ctx.send("\U00002611 Your background has been successfully reset.")
 
 			
 
@@ -567,12 +567,12 @@ class Hanapara():
 				aboutme_wrap = textwrap.wrap(aboutme_txt, width=linewidth)
 
 		if len(aboutme_wrap) > 6 :
-			await self.client.say("\U0000274E Your message is too long")
+			await ctx.send("\U0000274E Your message is too long")
 
 		else :
 			await updateuser(m_author.id, "about", msg)
-			msg = "\U00002611 Your profile has been successfully changed." 
-			await self.client.say(msg)
+			res = "\U00002611 Your profile has been successfully changed." 
+			await ctx.send(res)
 
 		
 	@_set.command(description="Change someone's title (Admin only)", name="title")
@@ -582,9 +582,9 @@ class Hanapara():
 		author_permissions = m_author.permissions_in(ctx.message.channel)
 		if author_permissions.administrator :
 			await updateuser(m_author.id, "title", msg)
-			await self.client.say("{}'s title successfully set to **{}**".format(mention.mention, msg))
+			await ctx.send("{}'s title successfully set to **{}**".format(mention.mention, msg))
 		else :
-			await self.client.say("\U0000274E You don't have the right to do that.")
+			await ctx.send("\U0000274E You don't have the right to do that.")
 
 
 	@_set.command(description="Change your profile's background to be still or animated", name="mode")
@@ -593,11 +593,11 @@ class Hanapara():
 
 		if "animated" in mode or "gif" in mode or "GIF" in mode :
 			await updateuser(m_author.id, "profile_mode", "animated")
-			await self.client.say("\U00002611 Your profile mode has been set to **animated**.")
+			await ctx.send("\U00002611 Your profile mode has been set to **animated**.")
 
 		elif "still" in mode or "jpg" in mode or "png" in mode :
 			await updateuser(m_author.id, "profile_mode", "still")
-			await self.client.say("\U00002611 Your profile mode has been set to **still**.")
+			await ctx.send("\U00002611 Your profile mode has been set to **still**.")
 
 
 	@commands.group(description="Stay updated about the progress of your spark !")
