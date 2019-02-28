@@ -50,7 +50,8 @@ async def getuser(userid) :
 async def updateuser(userid, column, content):
 	if await check_user(userid) :
 		print("OK")
-		curs.execute("UPDATE main set (?) = (?) WHERE uid = (?)", (column, content, userid))
+		if column == "about" :
+			curs.execute("UPDATE main set about = (?) WHERE uid = (?)", (content, userid))
 		db.commit()
 	else :
 		pass
