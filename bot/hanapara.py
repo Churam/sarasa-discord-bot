@@ -52,6 +52,10 @@ async def updateuser(userid, column, content):
 		print("OK")
 		if column == "about" :
 			curs.execute("UPDATE main set about = (?) WHERE uid = (?)", (content, userid))
+		elif column == "title" :
+			curs.execute("UPDATE main set title = (?) WHERE uid = (?)", (content, userid))
+		elif column == "profile_mode" :
+			curs.execute("UPDATE main set profile_mode = (?) WHERE uid = (?)", (content, userid))
 		db.commit()
 	else :
 		pass
