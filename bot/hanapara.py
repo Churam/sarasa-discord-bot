@@ -58,6 +58,8 @@ async def updateuser(userid, column, content):
 			curs.execute("UPDATE main set profile_mode = (?) WHERE uid = (?)", (content, userid))
 		elif column == "bg" :
 			curs.execute("UPDATE main set bg = (?) WHERE uid = (?)", (content, userid))
+		elif column == "anim_bg" :
+			curs.execute("UPDATE main set anim_bg = (?) WHERE uid = (?)", (content, userid))
 		db.commit()
 	else :
 		pass
@@ -519,8 +521,8 @@ class Hanapara():
 			print(bg_url)
 			if bg_url.endswith(".gif") :
 				dl = requests.get(bg_url)
-				with open("./users/{}/bg.gif".format(m_author.id), "wb") as f:
-					f.write(dl.content)
+				bgBytes = sqlite3.Binary(dl.content)
+				await updateuser(m_author.id, "anim_bg", bgBytes)
 
 			else :
 				baseheight = 600
@@ -528,7 +530,10 @@ class Hanapara():
 				wsize = int((float(bg.size[0])*float(hpercent)))
 				bg = bg.resize((wsize,baseheight), Image.BICUBIC)
 
-				bg.convert('RGB').save('./users/{}/bg.jpg'.format(m_author.id))
+				bgBytes = BytesIO()
+				bg.convert('RGB').save(bgBytes, format = 'JPEG')
+				await updateuser(m_author.id, "bg", bgBytes.getvalue())
+				await ctx.send("\U00002611 Your background has been successfully changed.")
 
 			msg = "\U00002611 Your background has been successfully changed." 
 			await ctx.send(msg)
@@ -553,13 +558,13 @@ class Hanapara():
 
 			elif link.endswith(".gif"):
 				dl = requests.get(link)
-				with open("./users/{}/bg.gif".format(m_author.id), "wb") as f:
-					f.write(dl.content)
+				bgBytes = sqlite3.Binary(dl.content)
+				await updateuser(m_author.id, "anim_bg", bgBytes)
 				await ctx.send("\U00002611 Your background has been successfully changed.")
 
 
 			elif link.startswith("default") or link.startswith("reset") :
-				os.remove("./users/{}/bg.jpg".format(m_author.id))
+				await updateuser(m_author.id, "bg", None)
 				await ctx.send("\U00002611 Your background has been successfully reset.")
 
 			
