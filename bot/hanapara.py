@@ -514,7 +514,7 @@ class Hanapara():
 		m_channel = ctx.message.channel
 		try :
 			attachment = ctx.message.attachments
-			bg_url = attachment[0]['url']
+			bg_url = attachment[0].url
 			#print(attachment[0]['url'])
 			response = requests.get(bg_url)
 			bg = Image.open(BytesIO(response.content))
