@@ -548,6 +548,7 @@ class Hanapara():
 
 				bgBytes = BytesIO()
 				bg.convert('RGB').save(bgBytes, format = 'JPEG')
+				print(bgBytes)
 				await updateuser(m_author.id, "bg", bgBytes)
 				await ctx.send("\U00002611 Your background has been successfully changed.")
 
