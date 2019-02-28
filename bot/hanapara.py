@@ -759,7 +759,7 @@ class Hanapara():
 	@commands.command(description="Check someone's GBF nickname.", aliases=["cn"])
 	async def checkname(self, ctx):
 		mention_user = ctx.message.mentions[0]
-		user_nickname = curs.execute("SELECT gbf_name FROM main WHERE uid = (?)", [mention_user.id]).fetchone()
+		user_nickname = curs.execute("SELECT gbf_name FROM main WHERE uid = (?)", [mention_user.id]).fetchone()[0]
 
 		if user_nickname == "" :
 			await ctx.send("{} hasn't registered a GBF nickname.".format(mention_user.display_name))
