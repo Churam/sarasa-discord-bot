@@ -766,47 +766,6 @@ class Hanapara():
 		else :
 			await ctx.send("{}'s GBF nickname is **{}**.".format(mention_user.display_name, user_nickname))
 
-	@commands.command( description = "Put the server in GW mode", aliases = ["gw"])
-	async def guildwar(self, ctx, mode : str) :
-		m_author = ctx.message.author
-		m_server = ctx.message.server
-		serv_path = Path("./servers/{}.json".format(ctx.message.server.id))
-		if (mode != "on" and mode != "off") or not m_author.permissions_in(ctx.message.channel).administrator :
-			pass
-		else :
-			create_server_file(m_server.id, ctx.message)
-			with open("./servers/{}.json".format(m_server.id), 'r') as sfr :
-				server_infos = json.load(sfr)
-			if mode == "on" and server_infos["gw"] == False:
-				for i in m_server.members :
-					with open(usrdata(i.id), 'r') as fr :
-						infos = json.load(fr)
-					if "nickname" not in infos :
-						print("{} hasn't registered a GBF nickname.".format(i.display_name))
-					elif not i.permissions_in(ctx.message.channel).administrator :
-						with open(usrdata(i.id), 'w') as fw :
-							infos["tmp_nickname"] = i.display_name
-							json.dump(infos, fw, indent = 4)
-						await self.client.change_nickname(i, infos["nickname"])
-				await self.client.say("GW mode enabled successfully")
-				with open("./servers/{}.json".format(m_server.id), 'w') as sfw :
-					server_infos["gw"] = True
-					json.dump(server_infos, sfw, indent = 4)
-
-			elif mode == "off" and server_infos["gw"] == True:
-				for i in m_server.members :
-					with open(usrdata(i.id), 'r') as fr :
-						infos = json.load(fr)
-					if "tmp_nickname" not in infos :
-						pass
-					elif not i.permissions_in(ctx.message.channel).administrator :
-						await self.client.change_nickname(i, infos["tmp_nickname"])
-				await self.client.say("GW mode disabled successfully")
-				with open("./servers/{}.json".format(m_server.id), 'w') as sfw :
-					server_infos["gw"] = False
-					json.dump(server_infos, sfw, indent = 4)
-
-
 	@commands.command(description="Send your contribution for checking.", aliases=["cc"])
 	async def contribcheck(self, ctx, amount : int) :
 		m_author = ctx.message.author
