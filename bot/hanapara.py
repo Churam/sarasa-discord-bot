@@ -43,13 +43,8 @@ async def adduser(userid) :
 	else :
 		pass
 
-async def getuser(userid) :
-	if not await check_user(userid) :
-		curs.execute("SELECT title, about_me, money,")
-
 async def updateuser(userid, column, content):
 	if await check_user(userid) :
-		print("OK")
 		if column == "about" :
 			curs.execute("UPDATE main set about = (?) WHERE uid = (?)", (content, userid))
 		elif column == "title" :
@@ -60,6 +55,14 @@ async def updateuser(userid, column, content):
 			curs.execute("UPDATE main set bg = (?) WHERE uid = (?)", (content, userid))
 		elif column == "anim_bg" :
 			curs.execute("UPDATE main set anim_bg = (?) WHERE uid = (?)", (content, userid))
+		elif column == "money" :
+			curs.execute("UPDATE main set money = (?) WHERE uid = (?)", (content, userid))
+		elif column == "gbf_name" :
+			curs.execute("UPDATE main set gbf_name = (?) WHERE uid = (?)", (content, userid))
+		elif column == "waifu" :
+			curs.execute("UPDATE main set gbf_name = (?) WHERE uid = (?)", (content, userid))
+		elif column == "husbando" :
+			curs.execute("UPDATE main set gbf_name = (?) WHERE uid = (?)", (content, userid))
 		db.commit()
 	else :
 		pass
@@ -335,7 +338,6 @@ class Hanapara():
 		money = userdata[2]
 		aboutme_txt = userdata[1]
 		response = requests.get(m_author.avatar_url)
-		print(userdata[3])
 
 		if "still" in userdata[3] :
 
@@ -518,7 +520,6 @@ class Hanapara():
 			#print(attachment[0]['url'])
 			response = requests.get(bg_url)
 			bg = Image.open(BytesIO(response.content))
-			print(bg_url)
 			if bg_url.endswith(".gif") :
 				dl = requests.get(bg_url)
 				bgBytes = sqlite3.Binary(dl.content)
@@ -691,11 +692,11 @@ class Hanapara():
 
 
 	@commands.group(description="Currency related commands.", aliases=["$"])
-	async def money(self, ctx):
+	async def _money(self, ctx):
 		pass
 
 
-	@money.command(description="! Admin Only ! Add flowers to someone's account.", name="add")
+	@_money.command(description="! Admin Only ! Add flowers to someone's account.", name="add")
 	async def _add(self, ctx, mention, amount : int ):
 		
 		m_author = ctx.message.author
@@ -717,7 +718,7 @@ class Hanapara():
 			await self.client.say("\U0000274E | You don't have the right to do that.")
 
 
-	@money.command(description="Transfer flowers to someone.", name="give")
+	@_money.command(description="Transfer flowers to someone.", name="give")
 	async def _give(self, ctx, mention, amount : int ):
 		
 		m_author = ctx.message.author
@@ -742,36 +743,28 @@ class Hanapara():
 			await self.client.say("\U0001F4B5 | Successfully transferred {}\U0001F4AE to **{}**".format(amount,mention.mention))
 
 
-	@commands.command(description="Set or change your registered GBF nickname.", aliases=["pn"])
+	@_set.command(description="Set or change your registered GBF nickname.", aliases=["pn"])
 	async def playername(self, ctx, *, nickname=None) :
 		nickname = str(nickname)
 		m_author = ctx.message.author
-		with open(usrdata(m_author.id)) as fp :
-			UserDatas = json.load(fp)
 
 		if nickname is None :
 			pass
 
 		else :
-
-			UserDatas["nickname"] = nickname
-
-			with open(usrdata(m_author.id), 'w') as x :
-				json.dump(UserDatas, x, indent=2)
-
+			await updateuser(m_author.id, "gbf_name", nickname)
 			await self.client.say("Your registered player name was set to **{}**".format(nickname))
 
 
 	@commands.command(description="Check someone's GBF nickname.", aliases=["cn"])
 	async def checkname(self, ctx):
 		mention_user = ctx.message.mentions[0]
-		with open(usrdata(mention_user.id)) as fp :
-			UserDatas = json.load(fp)
+		user_nickname = curs.execut("SELECT gbf_name FROM main WHERE uid = (?)", [mention_user.id]).fetchone()
 
-		if "nickname" not in UserDatas or UserDatas["nickname"] == "" :
+		if user_nickname == "" :
 			await self.client.say("{} hasn't registered a GBF nickname.".format(mention_user.display_name))
 		else :
-			await self.client.say("{}'s GBF nickname is **{}**.".format(mention_user.display_name, UserDatas["nickname"]))
+			await self.client.say("{}'s GBF nickname is **{}**.".format(mention_user.display_name, user_nickname))
 
 	@commands.command( description = "Put the server in GW mode", aliases = ["gw"])
 	async def guildwar(self, ctx, mode : str) :
