@@ -707,8 +707,8 @@ class Hanapara():
 
 		elif m_author.id == 90878360053366784:
 			money = curs.execute("SELECT money from main WHERE uid = (?)", [m_author.id]).fetchone()[0]
-			await updateuser(m_author.id, "money", money + amount)
-			await ctx.send("\U0001F4B5 | Successfully gave {}\U0001F4AE to **{}**".format(amount, mention_user.display_name))
+			await updateuser(mention_user.id, "money", money + amount)
+			await ctx.send("\U0001F4B5 | Successfully added {} \U0001F4AE to **{}**'s account".format(amount, mention_user.display_name))
 		
 		else :
 			await ctx.send("\U0000274E | You don't have the right to do that.")
