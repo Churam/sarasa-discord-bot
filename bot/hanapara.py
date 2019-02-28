@@ -753,7 +753,7 @@ class Hanapara():
 
 		else :
 			await updateuser(m_author.id, "gbf_name", nickname)
-			await self.client.say("Your registered player name was set to **{}**".format(nickname))
+			await ctx.send("Your registered player name was set to **{}**".format(nickname))
 
 
 	@commands.command(description="Check someone's GBF nickname.", aliases=["cn"])
@@ -762,9 +762,9 @@ class Hanapara():
 		user_nickname = curs.execut("SELECT gbf_name FROM main WHERE uid = (?)", [mention_user.id]).fetchone()
 
 		if user_nickname == "" :
-			await self.client.say("{} hasn't registered a GBF nickname.".format(mention_user.display_name))
+			await ctx.send("{} hasn't registered a GBF nickname.".format(mention_user.display_name))
 		else :
-			await self.client.say("{}'s GBF nickname is **{}**.".format(mention_user.display_name, user_nickname))
+			await ctx.send("{}'s GBF nickname is **{}**.".format(mention_user.display_name, user_nickname))
 
 	@commands.command( description = "Put the server in GW mode", aliases = ["gw"])
 	async def guildwar(self, ctx, mode : str) :
