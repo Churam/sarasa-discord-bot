@@ -716,7 +716,6 @@ class Hanapara():
 
 	@_money.command(description="Transfer flowers to someone.", name="give")
 	async def _give(self, ctx, mention, amount : int ):
-		
 		m_author = ctx.message.author
 		mention = ctx.message.mentions[0]
 		author_money = curs.execute("SELECT money from main WHERE uid = (?)", [m_author.id]).fetchone()[0]
@@ -745,9 +744,9 @@ class Hanapara():
 
 	@commands.command(description="Check someone's GBF nickname.", aliases=["cn"])
 	async def checkname(self, ctx):
-		if ctx.message.mentions[0] :
+		try :
 			mention_user = ctx.message.mentions[0]
-		else :
+		except IndexError :
 			mention_user = ctx.author
 		user_nickname = curs.execute("SELECT gbf_name FROM main WHERE uid = (?)", [mention_user.id]).fetchone()[0]
 
