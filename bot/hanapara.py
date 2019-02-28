@@ -56,6 +56,8 @@ async def updateuser(userid, column, content):
 			curs.execute("UPDATE main set title = (?) WHERE uid = (?)", (content, userid))
 		elif column == "profile_mode" :
 			curs.execute("UPDATE main set profile_mode = (?) WHERE uid = (?)", (content, userid))
+		elif column == "bg" :
+			curs.execute("UPDATE main set bg = (?) WHERE uid = (?)", (content, userid))
 		db.commit()
 	else :
 		pass
@@ -544,7 +546,9 @@ class Hanapara():
 				wsize = int((float(bg.size[0])*float(hpercent)))
 				bg = bg.resize((wsize,baseheight), Image.BICUBIC)
 
-				bg.convert('RGB').save('./users/{}/bg.jpg'.format(m_author.id))
+				bgBytes = io.BytesIO()
+				bg.convert('RGB').save(bgBytes, format = 'JPEG')
+				await updateuser(m_author.id, "bg", bgBytes)
 				await ctx.send("\U00002611 Your background has been successfully changed.")
 
 			elif link.endswith(".gif"):
