@@ -724,7 +724,7 @@ class Hanapara():
 
 		else :
 			mention_money = curs.execute("SELECT money from main WHERE uid = (?)", [mention.id]).fetchone()[0]
-			await updateuser(m_author_id, "money", author_money - amount)
+			await updateuser(m_author.id, "money", author_money - amount)
 			await updateuser(mention.id, "money", mention_money + amount)
 			await ctx.send("\U0001F4B5 | Successfully transferred {}\U0001F4AE to **{}**".format(amount,mention.mention))
 
