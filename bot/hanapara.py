@@ -546,7 +546,7 @@ class Hanapara():
 				wsize = int((float(bg.size[0])*float(hpercent)))
 				bg = bg.resize((wsize,baseheight), Image.BICUBIC)
 
-				bgBytes = io.BytesIO()
+				bgBytes = BytesIO()
 				bg.convert('RGB').save(bgBytes, format = 'JPEG')
 				await updateuser(m_author.id, "bg", bgBytes)
 				await ctx.send("\U00002611 Your background has been successfully changed.")
