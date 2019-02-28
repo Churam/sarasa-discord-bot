@@ -688,7 +688,7 @@ class Hanapara():
 		m_author = ctx.message.author
 		m_author_id = m_author.id
 		await updatespark(m_author.id)
-		await self.client.say("Spark succesfully reset.")
+		await ctx.send("Spark succesfully reset.")
 
 
 	@commands.group(description="Currency related commands.", aliases=["$"])
@@ -696,26 +696,22 @@ class Hanapara():
 		pass
 
 
-	@_money.command(description="! Admin Only ! Add flowers to someone's account.", name="add")
+	@_money.command(description="! OWNER ONLY ! Add flowers to someone's account.", name="add")
 	async def _add(self, ctx, mention, amount : int ):
 		
 		m_author = ctx.message.author
 		mention = ctx.message.mentions[0]
-		author_permissions = m_author.permissions_in(ctx.message.channel)
 
 		if mention is None or amount is None:
-			await self.client.say("\U0000274E | Correct format is `$$ add <mention> <amount>`")
+			await ctx.send("\U0000274E | Correct format is `$$ add <mention> <amount>`")
 
-		elif author_permissions.administrator:
-			with open("./users/{}/userdata.json".format(mention.id)) as fp:
-				data = json.load(fp)
-			with open("./users/{}/userdata.json".format(mention.id), "w", encoding="UTF-8") as f:
-				data["money"] += amount
-				json.dump(data,f, indent=2)
-			await self.client.say("\U0001F4B5 | Successfully gave {}\U0001F4AE to **{}**".format(amount,mention.mention))
+		elif m_author.id == 90878360053366784:
+			money = curs.execute("SELECT money from main WHERE uid = (?)", [m_author.id]).fetchone()[0]
+			await updateuser(m_author.id, "money", money + amount)
+			await ctx.send("\U0001F4B5 | Successfully gave {}\U0001F4AE to **{}**".format(amount,mention.mention))
 		
 		else :
-			await self.client.say("\U0000274E | You don't have the right to do that.")
+			await ctx.send("\U0000274E | You don't have the right to do that.")
 
 
 	@_money.command(description="Transfer flowers to someone.", name="give")
@@ -723,24 +719,15 @@ class Hanapara():
 		
 		m_author = ctx.message.author
 		mention = ctx.message.mentions[0]
-		author_permissions = m_author.permissions_in(ctx.message.channel)
-		with open("./users/{}/userdata.json".format(m_author.id)) as x:
-			authordata = json.load(x)
-		author_money = authordata["money"]
+		author_money = curs.execute("SELECT money from main WHERE uid = (?)", [m_author.id]).fetchone()[0]
 		if author_money < amount :
-			await self.client.say("\U0000274E | You don't have enough {}\U0001F4AE to do that.")
+			await ctx.send("\U0000274E | You don't have enough {}\U0001F4AE to do that.")
 
 		else :
-			with open("./users/{}/userdata.json".format(mention.id)) as fp:
-				targetdata = json.load(fp)
-			with open("./users/{}/userdata.json".format(mention.id), "w", encoding="UTF-8") as f:
-				targetdata["money"] += amount
-				json.dump(targetdata,f, indent=2)
-
-			with open("./users/{}/userdata.json".format(m_author.id), 'w', encoding="UTF-8") as y:
-				authordata["money"] -= amount
-				json.dump(authordata,y, indent=2)
-			await self.client.say("\U0001F4B5 | Successfully transferred {}\U0001F4AE to **{}**".format(amount,mention.mention))
+			mention_money = curs.execute("SELECT money from main WHERE uid = (?)", [mention.id]).fetchone()[0]
+			await updateuser(m_author_id, "money", author_money - amount)
+			await updateuser(mention.id, "money", mention_money + amount)
+			await ctx.send("\U0001F4B5 | Successfully transferred {}\U0001F4AE to **{}**".format(amount,mention.mention))
 
 
 	@_set.command(description="Set or change your registered GBF nickname.", aliases=["pn"])
@@ -758,7 +745,10 @@ class Hanapara():
 
 	@commands.command(description="Check someone's GBF nickname.", aliases=["cn"])
 	async def checkname(self, ctx):
-		mention_user = ctx.message.mentions[0]
+		if ctx.message.mentions[0] :
+			mention_user = ctx.message.mentions[0]
+		else :
+			mention_user = ctx.author
 		user_nickname = curs.execute("SELECT gbf_name FROM main WHERE uid = (?)", [mention_user.id]).fetchone()[0]
 
 		if user_nickname == "" :
