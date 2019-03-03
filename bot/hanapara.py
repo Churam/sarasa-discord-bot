@@ -599,7 +599,7 @@ class Hanapara():
 
 
 	@spark.command(name="set", brief="- Set a certain amount of a given element.", help="Set a certain amount of a given element. \nAvailable elements :\n - Crystals : crystal, crystals \n - Draw tickets : ticket, tickets, tix \n - 10-part draw tickets : 10ticket, tentickets, 10tix")
-	async def spark_set(self, ctx, element : str, amount : int):
+	async def spark_set(self, ctx, element : str, amount = None):
 		m_author = ctx.message.author
 		m_author_id = m_author.id
 		element = element.lower()
@@ -608,17 +608,32 @@ class Hanapara():
 		tickets = spark[0][1]
 		tentickets = spark[0][2]
 
-		if element == "crystals" or element == "crystal" :
-			crystals = amount
-
-		elif element == "ticket" or element == "tickets" or element == "tix" :
-			tickets = amount
-
-		elif element == "10ticket" or element == "tentickets" or element == "10tix" :
-			tentickets = amount
-
+		if amount is None :
+			nb_list = element.split(";")
+			if len(nb_list) > 3 :
+				await ctx.send("There are too much elements.")
+				return
+			items = [crystals, tickets, tentickets]
+			for i in range(len(nb_list)) :
+				if i is 0 :
+					crystals = int(nb_list[i])
+				elif i is 1 :
+					tickets = int(nb_list[i])
+				elif i is 2 :
+					tentickets = int(nb_list[i])
 		else :
-			await ctx.send("I don't know what you're trying to do.")
+
+			if element == "crystals" or element == "crystal" :
+				crystals = amount
+
+			elif element == "ticket" or element == "tickets" or element == "tix" :
+				tickets = amount
+
+			elif element == "10ticket" or element == "tentickets" or element == "10tix" :
+				tentickets = amount
+
+			else :
+				await ctx.send("I don't know what you're trying to do.")
 
 		await updatespark(m_author_id, crystals, tickets, tentickets)
 		total_draws = int((crystals/300) + tickets + (tentickets*10))
