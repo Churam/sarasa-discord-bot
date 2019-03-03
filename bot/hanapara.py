@@ -706,7 +706,7 @@ class Hanapara():
 			await ctx.send("\U0000274E | Correct format is `$$ add <mention> <amount>`")
 
 		elif m_author.id == 90878360053366784:
-			money = curs.execute("SELECT money from main WHERE uid = (?)", [m_author.id]).fetchone()[0]
+			money = curs.execute("SELECT money from main WHERE uid = (?)", [mention_user.id]).fetchone()[0]
 			await updateuser(mention_user.id, "money", money + amount)
 			await ctx.send("\U0001F4B5 | Successfully added {} \U0001F4AE to **{}**'s account".format(amount, mention_user.display_name))
 		
