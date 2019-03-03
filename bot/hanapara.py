@@ -11,61 +11,7 @@ import requests
 from io import BytesIO
 from datetime import datetime
 import asyncio
-import sqlite3
-
-#db connection
-db = sqlite3.connect("./database/sarasa_db.sqlite3")
-curs = db.cursor()
-
-async def check_user(uid, table = "main"):
-	if table == "main" :
-		curs.execute("SELECT uid FROM main WHERE uid = (?)", (uid,))
-	elif table == "spark" :
-		curs.execute("SELECT uid FROM spark WHERE uid = (?)", (uid,))
-	exists = curs.fetchone()
-	if exists :
-		return True
-	else :
-		return False
-
-async def adduser(userid) :
-	if not await check_user(userid) :
-		title = ""
-		about_me = ""
-		money = 0
-		gbf_name = ""
-		profile_mode = "still"
-		waifu = []
-		husbando = []
-		datas = [userid, title, about_me, money, gbf_name, profile_mode, json.dumps(waifu), json.dumps(waifu), None, None]
-		curs.execute('INSERT INTO main VALUES (?,?,?,?,?,?,?,?,?,?)', datas)
-		db.commit()
-	else :
-		pass
-
-async def updateuser(userid, column, content):
-	if await check_user(userid) :
-		if column == "about" :
-			curs.execute("UPDATE main set about = (?) WHERE uid = (?)", (content, userid))
-		elif column == "title" :
-			curs.execute("UPDATE main set title = (?) WHERE uid = (?)", (content, userid))
-		elif column == "profile_mode" :
-			curs.execute("UPDATE main set profile_mode = (?) WHERE uid = (?)", (content, userid))
-		elif column == "bg" :
-			curs.execute("UPDATE main set bg = (?) WHERE uid = (?)", (content, userid))
-		elif column == "anim_bg" :
-			curs.execute("UPDATE main set anim_bg = (?) WHERE uid = (?)", (content, userid))
-		elif column == "money" :
-			curs.execute("UPDATE main set money = (?) WHERE uid = (?)", (content, userid))
-		elif column == "gbf_name" :
-			curs.execute("UPDATE main set gbf_name = (?) WHERE uid = (?)", (content, userid))
-		elif column == "waifu" :
-			curs.execute("UPDATE main set gbf_name = (?) WHERE uid = (?)", (content, userid))
-		elif column == "husbando" :
-			curs.execute("UPDATE main set gbf_name = (?) WHERE uid = (?)", (content, userid))
-		db.commit()
-	else :
-		pass
+from database.database import check_user, updateuser, curs, db
 
 async def addspark(userid, crystals = 0, tix = 0, ten_tix = 0):
 	if not await check_user(userid, "spark") :
@@ -145,8 +91,6 @@ async def processImage(m_author, im):
 		pass # end of sequence
 
 	nickname = m_author.display_name
-	if not await check_user(m_author.id) :
-		await adduser(m_author.id)
 	curs.execute("SELECT title, about, money FROM main WHERE uid = (?)", (m_author.id,))
 	userdata = curs.fetchone()
 	title = userdata[0]
@@ -323,8 +267,6 @@ class Hanapara():
 
 		nickname = m_author.display_name
 
-		if not await check_user(m_author.id) :
-			await adduser(m_author.id)
 		curs.execute("SELECT title, about, money, profile_mode FROM main WHERE uid = (?)", (m_author.id,))
 		userdata = curs.fetchone()
 		title = userdata[0]
@@ -729,8 +671,8 @@ class Hanapara():
 			await ctx.send("\U0001F4B5 | Successfully transferred {}\U0001F4AE to **{}**".format(amount,mention.mention))
 
 
-	@_set.command(description="Set or change your registered GBF nickname.", aliases=["pn"])
-	async def playername(self, ctx, *, nickname=None) :
+	@_set.command(description="Set or change your registered GBF nickname.", aliases=["sn"])
+	async def setname(self, ctx, *, nickname=None) :
 		nickname = str(nickname)
 		m_author = ctx.message.author
 
@@ -751,7 +693,7 @@ class Hanapara():
 		user_nickname = curs.execute("SELECT gbf_name FROM main WHERE uid = (?)", [mention_user.id]).fetchone()[0]
 
 		if user_nickname == "" :
-			await ctx.send("{} hasn't registered a GBF nickname.".format(mention_user.display_name))
+			await ctx.send("{} hasn't registered a GBF nickname. Register one with `$setname`.".format(mention_user.display_name))
 		else :
 			await ctx.send("{}'s GBF nickname is **{}**.".format(mention_user.display_name, user_nickname))
 

@@ -22,6 +22,7 @@ from io import BytesIO
 from pathlib import Path
 from math import ceil
 import sqlite3
+import database.database as db
 
 #enable the logger
 logger = logging.getLogger('discord')
@@ -54,11 +55,6 @@ client = commands.Bot(command_prefix='$', description=description)
 
 client.pm_help = True #Send the help message in PM
 
-   
-#db connection
-db = sqlite3.connect("./database/sarasa_db.sqlite3")
-curs = db.cursor()
-
 '''
 def old_adduser(userid, username):
     if not os.path.exists("./users/{}/".format(userid)) :
@@ -80,29 +76,6 @@ def old_adduser(userid, username):
             json.dump(usrdata, x, indent=2, ensure_ascii=False)
 '''
 
-async def check_user(uid, table = "main"):
-    curs.execute("SELECT uid FROM main WHERE uid = (?)", (uid,))
-    exists = curs.fetchall()
-    if exists :
-        return True
-    else :
-        return False
-
-async def adduser(userid) :
-    if not await check_user(userid) :
-        title = ""
-        about_me = ""
-        money = 0
-        gbf_name = ""
-        profile_mode = "still"
-        waifu = []
-        husbando = []
-        datas = [userid, title, about_me, money, gbf_name, profile_mode, json.dumps(waifu), json.dumps(waifu), None, None]
-        curs.execute('INSERT INTO main VALUES (?,?,?,?,?,?,?,?,?,?)', datas)
-        db.commit()
-    else :
-        pass
-
 @client.event
 async def on_ready():
     await client.wait_until_ready()
@@ -113,7 +86,7 @@ async def on_ready():
 
 @client.event
 async def on_message(message):
-    await adduser(message.author.id) #Add the user if he's not registered
+    await db.adduser(message.author.id) #Add the user if he's not registered
     #if "loli" in message.content.lower() :
     #			await client.add_reaction(message, "\U0001F693")
     await client.process_commands(message) #Keep on_message from blocking the function calls
@@ -126,6 +99,16 @@ async def active(ctx):
 @client.command()
 async def ctxtest(ctx):
 	await ctx.send("{} {}".format(ctx.author.name, ctx.author.id))
+
+@client.command()
+async def fix_akey(ctx):
+    if ctx.author.id is 90878360053366784 :
+        with open("akey.json", "r") as f :
+            datas = json.load(f)
+        await db.updateuser(ctx.author.id, "waifu", json.dumps(datas))
+        await ctx.send("Fixed Akey !")
+    else :
+        await ctx.send("Only Akey can fix Akey !")
 
 @client.command(description="Restarts the bot")
 async def restart(ctx):
