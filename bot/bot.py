@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from discord.ext.commands import CommandNotFound
 from datetime import datetime
 from time import sleep
 import os
@@ -22,6 +23,7 @@ from io import BytesIO
 from pathlib import Path
 from math import ceil
 import sqlite3
+import database.database as db
 
 #enable the logger
 logger = logging.getLogger('discord')
@@ -54,33 +56,6 @@ client = commands.Bot(command_prefix='$', description=description)
 
 client.pm_help = True #Send the help message in PM
 
-#db connection
-db = sqlite3.connect("./database/zooey_db.sqlite3")
-curs = db.cursor()
-
-async def check_user(uid, table = "main"):
-    curs.execute("SELECT uid FROM main WHERE uid = (?)", (uid,))
-    exists = curs.fetchall()
-    if exists :
-        return True
-    else :
-        return False
-
-async def adduser(userid) :
-    if not await check_user(userid) :
-        title = ""
-        about_me = ""
-        money = 0
-        gbf_name = ""
-        profile_mode = "still"
-        waifu = []
-        husbando = []
-        datas = [userid, title, about_me, money, gbf_name, profile_mode, json.dumps(waifu), json.dumps(waifu), None, None]
-        curs.execute('INSERT INTO main VALUES (?,?,?,?,?,?,?,?,?,?)', datas)
-        db.commit()
-    else :
-        pass
-
 @client.event
 async def on_ready():
     await client.wait_until_ready()
@@ -90,19 +65,26 @@ async def on_ready():
     print('------')
     await client.change_presence(activity=discord.Game(name="Lite Mode"))
 
+#IGNORE COMMAND NOT FOUND ERRORS
+@client.event
+async def on_command_error(ctx, error):
+    if isinstance(error, CommandNotFound):
+        return
+    raise error
+
 @client.event
 async def on_message(message):
-    await adduser(message.author.id) #Add the user if he's not registered
+    await db.adduser(message.author.id) #Add the user if he's not registered
     #if "loli" in message.content.lower() :
     #			await client.add_reaction(message, "\U0001F693")
     await client.process_commands(message) #Keep on_message from blocking the function calls
 
-@client.command(description="Check if the bot is active")
+@client.command(description="Check if the bot is active", hidden=True)
 async def active(ctx):
     print("Command received")
     await ctx.send("Yes ? Do you need me ?")
 
-@client.command(description="Restarts the bot")
+@client.command(description="Restarts the bot", hidden=True)
 async def restart(ctx):
     if ctx.author.id == ownerid:
         print("Restarting the bot")
@@ -114,13 +96,13 @@ async def restart(ctx):
         msg="What are you trying to do ?! Idiot !"
         await ctx.send(msg)
 
-@client.command(aliases=["cg"])
+@client.command(aliases=["cg"], hidden=True)
 async def changegame(ctx,*, text):
     if ctx.author.id != ownerid :
-        pass
-    else :
-        await client.change_presence(activity=discord.Game(name=text))
-@client.command()
+        return
+    await client.change_presence(activity=discord.Game(name=text))
+
+@client.command(hidden=True)
 async def load(ctx, extension_name : str):
     """Loads an extension."""
     if ctx.author.id != ownerid :
@@ -132,7 +114,7 @@ async def load(ctx, extension_name : str):
         return
     await ctx.send("{} loaded.".format(extension_name))
 
-@client.command()
+@client.command(hidden=True)
 async def unload(ctx, extension_name : str):
     """Unloads an extension."""
     if ctx.author.id != ownerid :
@@ -141,7 +123,7 @@ async def unload(ctx, extension_name : str):
     await ctx.send("{} unloaded.".format(extension_name))
 
 
-@client.command()
+@client.command(hidden=True)
 async def reload(ctx, extension_name : str):
     """Loads an extension."""
     if ctx.author.id != ownerid :

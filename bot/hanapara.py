@@ -11,37 +11,7 @@ import requests
 from io import BytesIO
 from datetime import datetime
 import asyncio
-import sqlite3
-
-#db connection
-db = sqlite3.connect("./database/zooey_db.sqlite3")
-curs = db.cursor()
-
-async def check_user(uid, table = "main"):
-    if table == "main" :
-        curs.execute("SELECT uid FROM main WHERE uid = (?)", (uid,))
-    elif table == "spark" :
-        curs.execute("SELECT uid FROM spark WHERE uid = (?)", (uid,))
-    exists = curs.fetchone()
-    if exists :
-        return True
-    else :
-        return False
-
-async def adduser(userid) :
-    if not await check_user(userid) :
-        title = ""
-        about_me = ""
-        money = 0
-        gbf_name = ""
-        profile_mode = "still"
-        waifu = []
-        husbando = []
-        datas = [userid, title, about_me, money, gbf_name, profile_mode, json.dumps(waifu), json.dumps(waifu), None, None]
-        curs.execute('INSERT INTO main VALUES (?,?,?,?,?,?,?,?,?,?)', datas)
-        db.commit()
-    else :
-        pass
+from database.database import check_user, updateuser, curs, db
 
 async def addspark(userid, crystals = 0, tix = 0, ten_tix = 0):
 	if not await check_user(userid, "spark") :
@@ -63,10 +33,10 @@ async def getspark(userid) :
 
 async def search_userdata(pk, col_name, table = "main"):
 	infos = [col_name, table, int(pk)]
-	curs.execute("SELECT (?) FROM (?) WHERE uid = (?)", infos)
+	curs.execute("SELECT (?) FROM main WHERE uid = (?)", infos)
 	res = curs.fetchone()
 	return res
-	
+
 
 def font(name = "rg" ,font_size = 24):
 	if name is "lt" :
@@ -96,13 +66,7 @@ def create_server_file(server_id, message) :
 
 
 #Processes animated profiles
-def processImage(m_author, infile):
-	with open("./users/{}/userdata.json".format(m_author.id)) as fp:
-		userdata = json.load(fp)
-	try:
-		im = Image.open(infile)
-	except IOError:
-		print("Cant load", infile)
+async def processImage(m_author, im):
 	i = 0
 	frames = []
 	new_frames = []
@@ -123,16 +87,18 @@ def processImage(m_author, infile):
 		pass # end of sequence
 
 	nickname = m_author.display_name
-
-	title = userdata["title"]
+	curs.execute("SELECT title, about, money FROM main WHERE uid = (?)", (m_author.id,))
+	userdata = curs.fetchone()
+	title = userdata[0]
 	if title is "" :
 		title = " "
-	crystals = userdata["spark"]["crystals"]
-	tix = userdata["spark"]["tickets"]
-	tentix = userdata["spark"]["tentickets"]
+	sparkdata = await getspark(m_author.id)
+	crystals = sparkdata[0][0]
+	tix = sparkdata[0][1]
+	tentix = sparkdata[0][2]
 	total_progress = (crystals + (tix*300) + (tentix*3000))/900
-	money = userdata["money"]
-	aboutme_txt = userdata["aboutme"]
+	money = userdata[2]
+	aboutme_txt = userdata[1]
 	response = requests.get(m_author.avatar_url)
 
 	for i in frames :
@@ -287,44 +253,40 @@ class Hanapara():
 
 	@commands.command(description="Show your profile", aliases=["p"])
 	async def profile(self, ctx, mention = None):
-
+		"Shows your profile !"
 		if mention is None :
 			m_author = ctx.message.author
-
 		else :
 			m_author = ctx.message.mentions[0]
 
 		m_channel = ctx.message.channel
-		await self.client.send_typing(m_channel)
-
-		with open('./users/{}/userdata.json'.format(m_author.id)) as n:
-			userdata = json.load(n)
+		await ctx.channel.trigger_typing()
 
 		nickname = m_author.display_name
 
-		title = userdata["title"]
+		curs.execute("SELECT title, about, money, profile_mode FROM main WHERE uid = (?)", (m_author.id,))
+		userdata = curs.fetchone()
+		title = userdata[0]
 		if title is "" :
 			title = " "
-		crystals = userdata["spark"]["crystals"]
-		tix = userdata["spark"]["tickets"]
-		tentix = userdata["spark"]["tentickets"]
+		sparkdata = await getspark(m_author.id)
+		crystals = sparkdata[0][0]
+		tix = sparkdata[0][1]
+		tentix = sparkdata[0][2]
 		total_progress = (crystals + (tix*300) + (tentix*3000))/900
-		money = userdata["money"]
-		aboutme_txt = userdata["aboutme"]
+		money = userdata[2]
+		aboutme_txt = userdata[1]
 		response = requests.get(m_author.avatar_url)
-		if userdata.get("profile_mode") is None :
-			with open("./users/{}/userdata.json".format(m_author.id),'w', encoding="UTF-8") as s:
-				userdata["profile_mode"] = "still"
-				json.dump(userdata,s, indent=2)
 
-		if "still" in userdata["profile_mode"] :
+		if "still" in userdata[3] :
 
 			canvas = Image.new("RGBA",(600,600),color=(255, 255, 255, 255))
 
 			#Check if the user already has a background picture, if not use the default one.
-			bg_path = Path("./users/{}/bg.jpg".format(m_author.id))
-			if bg_path.is_file():
-				background = Image.open("./users/{}/bg.jpg".format(m_author.id))
+			curs.execute("SELECT bg FROM main WHERE uid = (?)", (m_author.id,))
+			bg_data = curs.fetchone()[0]
+			if bg_data:
+				background = Image.open(BytesIO(bg_data))
 			else :
 				background = Image.open("./assets/bg.png")
 			canvas.paste(background,(int((600-background.size[0])/2),0))
@@ -459,25 +421,27 @@ class Hanapara():
 
 			canvas.thumbnail((300,300), Image.BICUBIC)
 			canvas.save("{}.png".format(m_author.id))
-			await self.client.send_file(m_channel,"{}.png".format(m_author.id))
-			await asyncio.sleep(15)
+			await ctx.send(file = discord.File("{}.png".format(m_author.id)))
+			await asyncio.sleep(10)
 			os.remove("{}.png".format(m_author.id))
 
-		elif "animated" in userdata["profile_mode"]:
+		elif "animated" in userdata[3]:
 			#Check if bg exists
-			bg_path = Path("./users/{}/bg.gif".format(m_author.id))
-			if bg_path.is_file():
-				background = Image.open("./users/{}/bg.gif".format(m_author.id))
+			await ctx.channel.trigger_typing()
+			curs.execute("SELECT anim_bg FROM main WHERE uid = (?)", (m_author.id,))
+			bg_data = curs.fetchone()[0]
+			if bg_data:
+				background = Image.open(BytesIO(bg_data))
 			else :
 				background = Image.open("./assets/bg.gif")
 
-			gif = processImage(m_author, bg_path)
-			gif_duration = gif['duration']
+			gif = await processImage(m_author, background)
+			gif_duration = gif["duration"]
 			gif = gif["gif"]
 			gifcanvas = gif[0]
 			del gif[0]
 			gifcanvas.save("{}.gif".format(m_author.id), save_all=True, append_images=gif, loop=99, duration=gif_duration)
-			await self.client.send_file(ctx.message.channel,"{}.gif".format(m_author.id))
+			await ctx.send(file = discord.File("{}.gif".format(m_author.id)))
 			await asyncio.sleep(15)
 			os.remove("{}.gif".format(m_author.id))
 
@@ -491,15 +455,14 @@ class Hanapara():
 		m_channel = ctx.message.channel
 		try :
 			attachment = ctx.message.attachments
-			bg_url = attachment[0]['url']
+			bg_url = attachment[0].url
 			#print(attachment[0]['url'])
 			response = requests.get(bg_url)
 			bg = Image.open(BytesIO(response.content))
-			print(bg_url)
 			if bg_url.endswith(".gif") :
 				dl = requests.get(bg_url)
-				with open("./users/{}/bg.gif".format(m_author.id), "wb") as f:
-					f.write(dl.content)
+				bgBytes = sqlite3.Binary(dl.content)
+				await updateuser(m_author.id, "anim_bg", bgBytes)
 
 			else :
 				baseheight = 600
@@ -507,13 +470,15 @@ class Hanapara():
 				wsize = int((float(bg.size[0])*float(hpercent)))
 				bg = bg.resize((wsize,baseheight), Image.BICUBIC)
 
-				bg.convert('RGB').save('./users/{}/bg.jpg'.format(m_author.id))
+				bgBytes = BytesIO()
+				bg.convert('RGB').save(bgBytes, format = 'JPEG')
+				await updateuser(m_author.id, "bg", bgBytes.getvalue())
 
 			msg = "\U00002611 Your background has been successfully changed." 
-			await self.client.say(msg)
+			await ctx.send(msg)
 		except IndexError :
 			if link is None :
-				await self.client.say("\U0000274E Please attach a picture to your message or send a link.")
+				await ctx.send("\U0000274E Please attach a picture to your message or send a link.")
 
 			elif link.endswith(".jpg") or link.endswith(".png") and link.startswith("http") :
 				bg_url = link
@@ -525,19 +490,21 @@ class Hanapara():
 				wsize = int((float(bg.size[0])*float(hpercent)))
 				bg = bg.resize((wsize,baseheight), Image.BICUBIC)
 
-				bg.convert('RGB').save('./users/{}/bg.jpg'.format(m_author.id))
-				await self.client.say("\U00002611 Your background has been successfully changed.")
+				bgBytes = BytesIO()
+				bg.convert('RGB').save(bgBytes, format = 'JPEG')
+				await updateuser(m_author.id, "bg", bgBytes.getvalue())
+				await ctx.send("\U00002611 Your background has been successfully changed.")
 
 			elif link.endswith(".gif"):
 				dl = requests.get(link)
-				with open("./users/{}/bg.gif".format(m_author.id), "wb") as f:
-					f.write(dl.content)
-				await self.client.say("\U00002611 Your background has been successfully changed.")
+				bgBytes = sqlite3.Binary(dl.content)
+				await updateuser(m_author.id, "anim_bg", bgBytes)
+				await ctx.send("\U00002611 Your background has been successfully changed.")
 
 
 			elif link.startswith("default") or link.startswith("reset") :
-				os.remove("./users/{}/bg.jpg".format(m_author.id))
-				await self.client.say("\U00002611 Your background has been successfully reset.")
+				await updateuser(m_author.id, "bg", None)
+				await ctx.send("\U00002611 Your background has been successfully reset.")
 
 			
 
@@ -545,9 +512,6 @@ class Hanapara():
 	async def _aboutme(self, ctx, *, msg):
 		m_author = ctx.message.author
 		m_channel = ctx.message.channel
-		with open("./users/{}/userdata.json".format(m_author.id)) as fp:
-			data = json.load(fp)
-
 		linewidth = 30
 		aboutme_txt = msg
 		aboutme_wrap = textwrap.wrap(aboutme_txt, width=linewidth)
@@ -558,14 +522,12 @@ class Hanapara():
 				aboutme_wrap = textwrap.wrap(aboutme_txt, width=linewidth)
 
 		if len(aboutme_wrap) > 6 :
-			await self.client.say("\U0000274E Your message is too long")
+			await ctx.send("\U0000274E Your message is too long")
 
 		else :
-			with open("./users/{}/userdata.json".format(m_author.id), 'w', encoding="UTF-8") as f:
-				data["aboutme"] = msg
-				json.dump(data,f, ensure_ascii=False, indent=2)
-			msg = "\U00002611 Your profile has been successfully changed." 
-			await self.client.say(msg)
+			await updateuser(m_author.id, "about", msg)
+			res = "\U00002611 Your profile has been successfully changed." 
+			await ctx.send(res)
 
 		
 	@_set.command(description="Change someone's title (Admin only)", name="title")
@@ -574,33 +536,23 @@ class Hanapara():
 		mention = ctx.message.mentions[0]
 		author_permissions = m_author.permissions_in(ctx.message.channel)
 		if author_permissions.administrator :
-			with open("./users/{}/userdata.json".format(mention.id)) as fp:
-				data = json.load(fp)
-			with open("./users/{}/userdata.json".format(mention.id), "w", encoding="UTF-8") as f:
-				data["title"] = msg
-				json.dump(data,f, indent=2)
-			await self.client.say("{}'s title successfully set to **{}**".format(mention.mention, msg))
+			await updateuser(m_author.id, "title", msg)
+			await ctx.send("{}'s title successfully set to **{}**".format(mention.mention, msg))
 		else :
-			await self.client.say("\U0000274E You don't have the right to do that.")
+			await ctx.send("\U0000274E You don't have the right to do that.")
 
 
 	@_set.command(description="Change your profile's background to be still or animated", name="mode")
 	async def _mode(self, ctx, mode):
 		m_author = ctx.message.author
-		with open('./users/{}/userdata.json'.format(m_author.id)) as fp:
-			data = json.load(fp)
 
 		if "animated" in mode or "gif" in mode or "GIF" in mode :
-			with open('./users/{}/userdata.json'.format(m_author.id),'w', encoding="UTF-8") as f:
-				data["profile_mode"] = "animated"
-				json.dump(data,f, indent=2)
-			await self.client.say("\U00002611 Your profile mode has been set to **animated**.")
+			await updateuser(m_author.id, "profile_mode", "animated")
+			await ctx.send("\U00002611 Your profile mode has been set to **animated**.")
 
 		elif "still" in mode or "jpg" in mode or "png" in mode :
-			with open('./users/{}/userdata.json'.format(m_author.id),'w', encoding="UTF-8") as f:
-				data["profile_mode"] = "still"
-				json.dump(data,f, indent=2)
-			await self.client.say("\U00002611 Your profile mode has been set to **still**.")
+			await updateuser(m_author.id, "profile_mode", "still")
+			await ctx.send("\U00002611 Your profile mode has been set to **still**.")
 
 
 	@commands.group(description="Stay updated about the progress of your spark !")
@@ -644,7 +596,7 @@ class Hanapara():
 
 
 	@spark.command(name="set", brief="- Set a certain amount of a given element.", help="Set a certain amount of a given element. \nAvailable elements :\n - Crystals : crystal, crystals \n - Draw tickets : ticket, tickets, tix \n - 10-part draw tickets : 10ticket, tentickets, 10tix")
-	async def spark_set(self, ctx, element : str, amount : int):
+	async def spark_set(self, ctx, element : str, amount = None):
 		m_author = ctx.message.author
 		m_author_id = m_author.id
 		element = element.lower()
@@ -653,17 +605,32 @@ class Hanapara():
 		tickets = spark[0][1]
 		tentickets = spark[0][2]
 
-		if element == "crystals" or element == "crystal" :
-			crystals = amount
-
-		elif element == "ticket" or element == "tickets" or element == "tix" :
-			tickets = amount
-
-		elif element == "10ticket" or element == "tentickets" or element == "10tix" :
-			tentickets = amount
-
+		if amount is None :
+			nb_list = element.split(";")
+			if len(nb_list) > 3 :
+				await ctx.send("There are too much elements.")
+				return
+			items = [crystals, tickets, tentickets]
+			for i in range(len(nb_list)) :
+				if i is 0 :
+					crystals = int(nb_list[i])
+				elif i is 1 :
+					tickets = int(nb_list[i])
+				elif i is 2 :
+					tentickets = int(nb_list[i])
 		else :
-			await ctx.send("I don't know what you're trying to do.")
+
+			if element == "crystals" or element == "crystal" :
+				crystals = amount
+
+			elif element == "ticket" or element == "tickets" or element == "tix" :
+				tickets = amount
+
+			elif element == "10ticket" or element == "tentickets" or element == "10tix" :
+				tentickets = amount
+
+			else :
+				await ctx.send("I don't know what you're trying to do.")
 
 		await updatespark(m_author_id, crystals, tickets, tentickets)
 		total_draws = int((crystals/300) + tickets + (tentickets*10))
@@ -675,39 +642,72 @@ class Hanapara():
 		m_author = ctx.message.author
 		m_author_id = m_author.id
 		await updatespark(m_author.id)
-		await self.client.say("Spark succesfully reset.")
+		await ctx.send("Spark succesfully reset.")
 
 
-	@commands.command(description="Set or change your registered GBF nickname.", aliases=["pn"])
-	async def playername(self, ctx, *, nickname=None) :
+	@commands.group(description="Currency related commands.", name="money", aliases=["$"])
+	async def _money(self, ctx):
+		pass
+
+
+	@_money.command(description="! OWNER ONLY ! Add flowers to someone's account.", name="add")
+	async def _add(self, ctx, mention, amount : int ):
+		
+		m_author = ctx.message.author
+		mention_user = ctx.message.mentions[0]
+
+		if mention is None or amount is None:
+			await ctx.send("\U0000274E | Correct format is `$$ add <mention> <amount>`")
+
+		elif m_author.id == 90878360053366784:
+			money = curs.execute("SELECT money from main WHERE uid = (?)", [mention_user.id]).fetchone()[0]
+			await updateuser(mention_user.id, "money", money + amount)
+			await ctx.send("\U0001F4B5 | Successfully added {} \U0001F4AE to **{}**'s account".format(amount, mention_user.display_name))
+		
+		else :
+			await ctx.send("\U0000274E | You don't have the right to do that.")
+
+
+	@_money.command(description="Transfer flowers to someone.", name="give")
+	async def _give(self, ctx, mention, amount : int ):
+		m_author = ctx.message.author
+		mention = ctx.message.mentions[0]
+		author_money = curs.execute("SELECT money from main WHERE uid = (?)", [m_author.id]).fetchone()[0]
+		if author_money < amount :
+			await ctx.send("\U0000274E | You don't have enough {}\U0001F4AE to do that.")
+
+		else :
+			mention_money = curs.execute("SELECT money from main WHERE uid = (?)", [mention.id]).fetchone()[0]
+			await updateuser(m_author.id, "money", author_money - amount)
+			await updateuser(mention.id, "money", mention_money + amount)
+			await ctx.send("\U0001F4B5 | Successfully transferred {}\U0001F4AE to **{}**".format(amount,mention.mention))
+
+
+	@_set.command(description="Set or change your registered GBF nickname.", aliases=["sn"])
+	async def setname(self, ctx, *, nickname=None) :
 		nickname = str(nickname)
 		m_author = ctx.message.author
-		with open(usrdata(m_author.id)) as fp :
-			UserDatas = json.load(fp)
 
 		if nickname is None :
 			pass
 
 		else :
-
-			UserDatas["nickname"] = nickname
-
-			with open(usrdata(m_author.id), 'w') as x :
-				json.dump(UserDatas, x, indent=2)
-
-			await self.client.say("Your registered player name was set to **{}**".format(nickname))
+			await updateuser(m_author.id, "gbf_name", nickname)
+			await ctx.send("Your registered player name was set to **{}**".format(nickname))
 
 
 	@commands.command(description="Check someone's GBF nickname.", aliases=["cn"])
 	async def checkname(self, ctx):
-		mention_user = ctx.message.mentions[0]
-		with open(usrdata(mention_user.id)) as fp :
-			UserDatas = json.load(fp)
+		try :
+			mention_user = ctx.message.mentions[0]
+		except IndexError :
+			mention_user = ctx.author
+		user_nickname = curs.execute("SELECT gbf_name FROM main WHERE uid = (?)", [mention_user.id]).fetchone()[0]
 
-		if "nickname" not in UserDatas or UserDatas["nickname"] == "" :
-			await self.client.say("{} hasn't registered a GBF nickname.".format(mention_user.display_name))
+		if user_nickname == "" :
+			await ctx.send("{} hasn't registered a GBF nickname. Register one with `$setname`.".format(mention_user.display_name))
 		else :
-			await self.client.say("{}'s GBF nickname is **{}**.".format(mention_user.display_name, UserDatas["nickname"]))
+			await ctx.send("{}'s GBF nickname is **{}**.".format(mention_user.display_name, user_nickname))
 
 def setup(bot):
 	bot.add_cog(Hanapara(bot))
