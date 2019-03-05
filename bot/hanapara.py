@@ -46,24 +46,12 @@ def font(name = "rg" ,font_size = 24):
 	elif name is "bd" :
 		return ImageFont.truetype(font="./fonts/Aller_Bd.ttf", size=font_size, encoding="unic")
 
-#To avoid having to write the same path all the time
-def usrdata(userid):
-	return "./users/{}/userdata.json".format(userid)
-
-def server_file_exists(server_id) :
-	serv_path = Path("./servers/{}.json".format(server_id))
-	if serv_path.exists() :
+def is_number(s):
+	try:
+		float(s)
 		return True
-	else :
+	except ValueError:
 		return False
-
-def create_server_file(server_id, message) :
-	server = message.server
-	if server_file_exists(server_id) == False :
-		with open("./servers/{}.json".format(server_id), 'w') as fc :
-					server_infos = {"name" : server.name, "gw" : False}
-					json.dump(server_infos, fc, indent = 4)
-
 
 #Processes animated profiles
 async def processImage(m_author, im):
@@ -612,14 +600,15 @@ class Hanapara():
 				return
 			items = [crystals, tickets, tentickets]
 			for i in range(len(nb_list)) :
-				if i is 0 :
-					crystals = int(nb_list[i])
-				elif i is 1 :
-					tickets = int(nb_list[i])
-				elif i is 2 :
-					tentickets = int(nb_list[i])
+				if is_number(nb_list[i]) :
+					if i is 0 :
+						crystals = int(nb_list[i])
+					elif i is 1 :
+						tickets = int(nb_list[i])
+					elif i is 2 :
+						tentickets = int(nb_list[i])
 		else :
-
+			amount = int(amount)
 			if element == "crystals" or element == "crystal" :
 				crystals = amount
 
