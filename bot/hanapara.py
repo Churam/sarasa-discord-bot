@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from discord.ext.commands import Cog
 import textwrap
 from pathlib import Path
 import json
@@ -234,7 +235,7 @@ async def processImage(m_author, im):
 	return {'gif': new_frames,'duration': gifduration}
 
 
-class Hanapara():
+class Hanapara(Cog):
 	def __init__(self, bot):
 		self.client = bot
 

@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from discord.ext.commands import Cog
 import json
 from pybooru import Danbooru, PybooruHTTPError
 from random import randint, randrange, choice
@@ -12,8 +13,9 @@ with open('api.json') as api_file:
 	api_key = json.load(api_file)
 
 #Load the API Key and the Danbooru module
+danbooru_user = api_key["API"]["danbooru_user"] 
 danbooru_api = api_key["API"]["danbooru"]
-picbot = Danbooru('danbooru', username='Akeyro', api_key=danbooru_api)
+picbot = Danbooru('danbooru', username=danbooru_user, api_key=danbooru_api)
 
 #Danbooru tags to blacklist for the NSFW picture search commands
 tag_blacklist = ["lolicon", "scat", "guro", "vore", "rape", "spoiler", "peeing", "pee", "bestiality", "shota", "loli", 'shotacon', "furry"] 
@@ -100,7 +102,7 @@ async def picturesearch(tag, nsfw = False, nsfw_only = False, suffix = None, bla
 	if blacklist is True and blacklistcheck(pic_tags):
 		for i in range(0,6):
 			if i == 5 :
-				return None;
+				return None
 			random_pic = randint(0, pic_count - 1)
 			pic_show = picbot.post_show(pic_id)
 			pic_tags = pic_show["tag_string_general"].split(' ')
@@ -199,7 +201,7 @@ async def characterlist(ctx, user, waifu = False, husbando = False) :
 
 #Commands
 
-class Danbooru():
+class Danbooru(Cog):
 	def __init__(self, bot):
 		self.client = bot
 
@@ -310,30 +312,40 @@ class Danbooru():
 				await ctx.send(embed=em)
 
 	@waifu.command(pass_context=True, name="add")
-	async def waifu_add(self, ctx, *, waifuname : str):
+	async def waifu_add(self, ctx, *, waifunames : str):
 		m_author = ctx.author
 		m_author_id = ctx.author.id
-		while waifuname.endswith(" "):
-			waifuname = waifuname[:-1]
-		waifuname_format = waifuname.lower().title().replace("_", " ")
-		waifus = await getwaifus(m_author.id)
-		if waifus is None :
-			waifus = []
+		waifulist = waifunames.split(';')
+		user_waifus = await getwaifus(m_author.id)
+		if user_waifus is None :
+			user_waifus = []
+		
+		loglist = []
+		for waifuname in waifulist:
+			while waifuname.endswith(" "):
+				waifuname = waifuname[:-1]
+			waifuname_format = waifuname.lower().title().replace("_", " ")
 
-		if waifuname_format in waifus :
-				await ctx.send("This character is already in your Waifu list.")
-		elif "*" in waifuname :
-			await ctx.send("Please avoid using wildcards (*).")
-		else :
-			em = await picturesearch(tag = waifuname, embed = True, embed_color = 0xff6868)
-			if em == -1 :
-				await ctx.send("There is no waifu with this tag.")
+			if waifuname_format in user_waifus :
+				loglist.append("{} is already in your Waifu list.".format(waifuname_format))
+			elif "*" in waifuname :
+				loglist.append("Please avoid using wildcards \'*\' ({}).".format(waifuname_format))
 			else :
-				waifus.append(waifuname_format)
-				await updateuser(m_author.id, "waifu", json.dumps(waifus))
-				em.description = "Successfully added {} in your Waifu list".format(waifuname_format)
-				em.set_author(name=m_author.name)
-				await ctx.send(embed=em)
+				em = await picturesearch(tag = waifuname, embed = True, embed_color = 0xff6868)
+				if em == -1 :
+					loglist.append("There is no waifu with this tag ({}).".format(waifuname_format))
+				else :
+					user_waifus.append(waifuname_format)
+					await updateuser(m_author.id, "waifu", json.dumps(user_waifus))
+					if (len(waifulist) == 1):
+						em.description = "Successfully added {} in your Waifu list".format(waifuname_format)
+						em.set_author(name=m_author.name)
+						await ctx.send(embed=em)
+					else:
+						loglist.append("Successfully added {} in your Waifu list".format(waifuname_format))
+		if len(loglist) > 0:
+			await ctx.send('\n'.join(loglist))
+
 
 	@waifu.command(name="remove")
 	async def waifu_remove(self, ctx,* , waifuname : str):
@@ -372,29 +384,39 @@ class Danbooru():
 				await ctx.send(embed=em)
 
 	@husbando.command(pass_context=True, name="add")
-	async def _husbando_add(self, ctx, *, husbandoname : str):
+	async def _husbando_add(self, ctx, *, husbandonames : str):
 		m_author = ctx.message.author
 		m_author_id = ctx.message.author.id
-		while husbandoname.endswith(" "):
-			husbandoname = husbandoname[:-1]
-		husbandoname_format = husbandoname.lower().title().replace("_", " ")
-		husbandos = await gethusbandos(m_author.id)
-		if husbandos is None :
-			husbandos = []
-		if husbandoname_format in husbandos :
-				await ctx.send("This character is already in your husbando list.")
-		elif "*" in husbandoname :
-			await ctx.send("Please avoid using wildcards (*).")
-		else :
-			em = await picturesearch(tag = husbandoname, embed = True, embed_color = 0x777fc6)
-			if em == -1 :
-				await ctx.send("There is no husbando with this tag.")
+		
+		husbandolist = husbandonames.split(';')
+		user_husbandos = await gethusbandos(m_author.id)
+		if user_husbandos is None :
+			user_husbandos = []
+		loglist = []
+		for husbandoname in husbandolist:
+			while husbandoname.endswith(" "):
+				husbandoname = husbandoname[:-1]
+			husbandoname_format = husbandoname.lower().title().replace("_", " ")
+
+			if husbandoname_format in user_husbandos :
+				loglist.append("{} is already in your husbando list.".format(husbandoname_format))
+			elif "*" in husbandoname :
+				loglist.append("Please avoid using wildcards \'*\' ({}).".format(husbandoname_format))
 			else :
-				husbandos.append(husbandoname_format)
-				await updateuser(m_author.id, "husbando", json.dumps(husbandos))
-				em.description = "Successfully added {} in your husbando list".format(husbandoname_format)
-				em.set_author(name=m_author.name)
-				await ctx.send(embed=em)
+				em = await picturesearch(tag = husbandoname, embed = True, embed_color = 0x777fc6)
+				if em == -1 :
+					loglist.append("There is no husbando with this tag ({}).".format(husbandoname_format))
+				else :
+					user_husbandos.append(husbandoname_format)
+					await updateuser(m_author.id, "husbando", json.dumps(user_husbandos))
+					if (len(husbandolist) == 1):
+						em.description = "Successfully added {} in your husbando list".format(husbandoname_format)
+						em.set_author(name=m_author.name)
+						await ctx.send(embed=em)
+					else:
+						loglist.append("Successfully added {} in your husbando list".format(husbandoname_format))
+		if len(loglist) > 0:
+			await ctx.send('\n'.join(loglist))
 
 	@husbando.command(name="remove")
 	async def husbando_remove(self, ctx,* , husbandoname : str):

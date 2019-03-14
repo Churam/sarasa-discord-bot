@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 import discord
 from discord.ext import commands
+from discord.ext.commands import Cog
 import asyncio
 import json
 from random import randrange
@@ -95,7 +96,7 @@ def embedpic(title, pic_url, description=None, url=None, author=None, footer=Non
 	return em
 
 
-class Misc():
+class Misc(Cog):
 	def __init__(self, bot):
 		self.client = bot
 
